@@ -1,0 +1,51 @@
+# === Secret & Configuration Files ===
+.env
+.env.local
+*.env
+backend/.env
+
+# === Python (Backend) ===
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.pytest_cache/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# === Mobile App (React Native / Flutter / Android / iOS) ===
+# Node dependencies
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml (if troubleshooting, else keep)
+
+# Android specific
+.gradle/
+build/
+*.apk
+*.aar
+*.jar
+local.properties
+
+# iOS specific
+Pods/
+build/
+*.xcworkspace
+*.xcscheme
+.XCodeGuess
+
+# Expo specific (if using Expo for React Native)
+.expo/
+dist/
+
+# === Web Frontend ===
+# Live Server or build outputs
+.vscode/
+dist/
+build/
+.DS_Store
+Thumbs.db
+
+.jandivenv

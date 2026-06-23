@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "JaundiCare",
+    "slug": "jaundicare",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "jaundicare",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jaundicare.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "JaundiCare uses the camera to photograph your baby for jaundice screening.",
+        "NSPhotoLibraryUsageDescription": "JaundiCare needs access to your photo library to select a baby photo for screening.",
+        "NSLocationWhenInUseUsageDescription": "JaundiCare uses your location to find nearby health facilities."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#2d1a0e"
+      },
+      "package": "com.jaundicare.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "JaundiCare uses the camera to photograph your baby for jaundice screening.",
+          "microphonePermission": "JaundiCare uses the microphone for audio recording capabilities."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "JaundiCare needs access to your photos to select a baby photo for screening."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "JaundiCare uses your location to find nearby health facilities."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#d95f3b",
+          "defaultChannel": "default"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "gradleVersion": "8.13",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 35,
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libcrypto.so",
+                "**/libssl.so"
+              ]
+            }
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

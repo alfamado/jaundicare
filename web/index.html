@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="JaundiCare — AI-powered newborn jaundice screening and support for parents and community health workers." />
+  <title>JaundiCare</title>
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css?v=14" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#2d1a0e" />
+</head>
+<body>
+  <!-- Onboarding overlay — shown once on first visit -->
+  <div class="onboarding-overlay" id="onboardingOverlay">
+    <div class="onboarding-card">
+
+      <!-- Step 1 -->
+      <div class="onboarding-step active" id="onboardStep1">
+        <div class="onboarding-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="26" fill="rgba(217,95,59,0.12)" stroke="var(--coral)" stroke-width="1.5"/>
+            <path d="M28 14C28 14 18 20 18 28.5C18 33.7 22.5 38 28 38C33.5 38 38 33.7 38 28.5C38 20 28 14 28 14Z" fill="var(--coral)" opacity="0.85"/>
+            <circle cx="28" cy="22" r="3" fill="white" opacity="0.7"/>
+          </svg>
+        </div>
+        <h2 class="onboarding-title">Welcome to JaundiCare</h2>
+        <p class="onboarding-body">JaundiCare helps parents and health workers detect newborn jaundice early using AI-assisted image screening, symptom triage, and referral support.</p>
+        <div class="onboarding-note">
+          <strong>Important:</strong> This is a screening support tool. It does not replace a doctor, midwife, or bilirubin test.
+        </div>
+        <button class="btn-primary onboarding-next" data-next="2">Get started</button>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="onboarding-step" id="onboardStep2">
+        <div class="onboarding-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="26" fill="rgba(232,151,58,0.12)" stroke="var(--amber)" stroke-width="1.5"/>
+            <circle cx="28" cy="22" r="8" stroke="var(--amber-dark)" stroke-width="1.8"/>
+            <path d="M14 44c0-7.7 6.3-14 14-14s14 6.3 14 14" stroke="var(--amber-dark)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 class="onboarding-title">Who are you?</h2>
+        <p class="onboarding-body">This helps us show the most relevant experience for you.</p>
+        <div class="onboarding-role-grid">
+          <button class="onboarding-role-btn" id="roleParent" data-role="parent">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="10" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M5 26c0-4.97 4.03-9 9-9h1c4.97 0 9 4.03 9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <strong>Parent or caregiver</strong>
+            <span>I want to monitor my baby's health</span>
+          </button>
+          <button class="onboarding-role-btn" id="roleWorker" data-role="health_worker">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="8" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 8V6a4 4 0 0 1 8 0v2M14 13v4M12 15h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <strong>Health worker or CHW</strong>
+            <span>I support newborn care in the community</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="onboarding-step" id="onboardStep3">
+        <div class="onboarding-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="26" fill="rgba(90,138,110,0.12)" stroke="var(--sage)" stroke-width="1.5"/>
+            <path d="M16 28l8 8 16-16" stroke="var(--sage)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="onboarding-title" id="onboardStep3Title">You are all set</h2>
+        <p class="onboarding-body" id="onboardStep3Body">Start by creating a baby profile so the app can track age automatically, then run your first screening.</p>
+        <div class="onboarding-steps-preview">
+          <div class="onboard-step-item">
+            <div class="onboard-step-num">1</div>
+            <span id="onboardAction1">Create a baby profile</span>
+          </div>
+          <div class="onboard-step-item">
+            <div class="onboard-step-num">2</div>
+            <span id="onboardAction2">Run a screening</span>
+          </div>
+          <div class="onboard-step-item">
+            <div class="onboard-step-num">3</div>
+            <span id="onboardAction3">View your result and next steps</span>
+          </div>
+        </div>
+        <button class="btn-primary onboarding-finish" id="onboardFinishBtn">Open JaundiCare</button>
+      </div>
+
+      <!-- Progress dots -->
+      <div class="onboarding-dots">
+        <div class="onboard-dot active" data-step="1"></div>
+        <div class="onboard-dot" data-step="2"></div>
+        <div class="onboard-dot" data-step="3"></div>
+      </div>
+
+    </div>
+  </div>
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <div class="brand-block">
+          <div class="brand-mark">
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 3C13 3 6 7.5 6 13.5C6 17.6 9.1 21 13 21C16.9 21 20 17.6 20 13.5C20 7.5 13 3 13 3Z" fill="currentColor" opacity="0.9"/>
+              <circle cx="13" cy="9" r="2.2" fill="white" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1 data-i18n="app.name">JaundiCare</h1>
+            <p data-i18n="app.support">Maternal &amp; newborn support</p>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-section="dashboard" data-i18n="nav.dashboard">Dashboard</button>
+          <button class="nav-item" data-section="profile" data-i18n="nav.profile">Baby Profile</button>
+          <button class="nav-item" data-section="screening" data-i18n="nav.screening">Screening</button>
+          <button class="nav-item" data-section="history" data-i18n="nav.history">History</button>
+          <button class="nav-item" data-section="chw" data-i18n="nav.chw">CHW Mode</button>
+          <button class="nav-item" data-section="education" data-i18n="nav.education">Education</button>
+          <button class="nav-item" data-section="care" data-i18n="nav.care">Care Guide</button>
+          <button class="nav-item" data-section="nomogram">Bili Nomogram</button>
+          <button class="nav-item" data-section="analytics">Analytics</button>
+        </nav>
+
+        <div class="sidebar-note">
+          <div class="sidebar-note-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM7.25 5.5a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-1.5 0V5.5Zm.75 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <h3>Important</h3>
+            <p>This tool supports screening and follow-up. It does not replace a doctor, midwife, or bilirubin test.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+
+      <header class="topbar">
+        <div class="topbar-left">
+          <p class="eyebrow" data-i18n="topbar.subtitle">Newborn jaundice care</p>
+          <h2 id="pageTitle">Dashboard</h2>
+        </div>
+
+        <div class="topbar-right">
+          <div class="lang-wrap">
+            <svg class="lang-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5C8 1.5 5.5 4.5 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4.5 10.5 8S8 14.5 8 14.5M1.5 8h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <select id="languageSwitcher">
+              <option value="en">English</option>
+              <option value="yo">Yoruba</option>
+              <option value="ha">Hausa</option>
+              <option value="ig">Igbo</option>
+              <option value="pcm">Pidgin</option>
+            </select>
+          </div>
+          <div class="topbar-pill" data-i18n="topbar.support">Parent-friendly screening</div>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section class="content-section active" id="dashboard">
+
+        <!-- Hero — lean, action-focused -->
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="hero-tag" data-i18n="dashboard.hero_tag">Early support for mothers and newborns</span>
+            <h3 data-i18n="dashboard.hero_title">Check early. Act early. Stay calm.</h3>
+            <p data-i18n="dashboard.hero_text">JaundiCare helps parents notice possible newborn jaundice early, understand warning signs, and know when to seek care.</p>
+            <div class="hero-actions">
+              <button class="btn-primary" id="goToScreeningBtn" data-i18n="dashboard.start_check">Start baby check</button>
+              <button class="btn-ghost" id="goToEducationBtn" data-i18n="dashboard.learn_jaundice">Learn about jaundice</button>
+            </div>
+          </div>
+          <div class="hero-aside">
+            <div class="hero-blob">
+              <svg class="blob-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <path d="M47.1,-61.2C59.7,-51.4,67.7,-35.4,70.4,-18.7C73.1,-2,70.4,15.4,63.1,29.9C55.7,44.4,43.6,56,29.2,62.1C14.8,68.2,-1.8,68.8,-18.2,64.5C-34.7,60.3,-51,51.1,-61.4,37.5C-71.8,23.9,-76.4,5.9,-73.7,-11.1C-71,-28.1,-61,-44.1,-47.6,-54C-34.3,-63.9,-17.1,-67.8,0.2,-68C17.6,-68.2,34.5,-71,47.1,-61.2Z" fill="rgba(255,255,255,0.15)" transform="translate(100 100)"/>
+              </svg>
+              <div class="hero-profile-card">
+                <span class="mini-label" data-i18n="dashboard.saved_profile">Saved baby profile</span>
+                <strong id="dashboardBabyName">No baby profile yet</strong>
+                <p id="dashboardBabyAge" class="mini-subtext">Create a profile to auto-calculate baby age.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Latest screening — dominant, full width, status-aware -->
+        <div class="dash-status-card" id="dashStatusCard">
+          <div class="dash-status-left">
+            <div class="dash-status-label" data-i18n="dashboard.latest_screening">Latest screening</div>
+            <div class="dash-status-value" id="dashStatusValue">No screening yet</div>
+            <p class="dash-status-sub" id="dashStatusSub">Run a screening to see your baby's latest result here.</p>
+          </div>
+          <div class="dash-status-right">
+            <button class="btn-primary" id="dashStartCheckBtn" data-i18n="dashboard.start_check">Start baby check</button>
+          </div>
+        </div>
+
+        <!-- Quick reference — two compact cards -->
+        <div class="dash-ref-grid">
+          <article class="card dash-ref-card">
+            <div class="dash-ref-header">
+              <div class="card-icon-wrap blush">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 1a9 9 0 1 0 0 18A9 9 0 0 0 10 1Zm1 13H9v-5h2v5Zm0-7H9V5h2v2Z" fill="currentColor"/></svg>
+              </div>
+              <h3 data-i18n="dashboard.how_to_check">How to check your baby</h3>
+            </div>
+            <ul class="dash-ref-list">
+              <li data-i18n="dashboard.check.1">Look at the whites of the eyes.</li>
+              <li data-i18n="dashboard.check.2">Check the gums.</li>
+              <li data-i18n="dashboard.check.3">Check the palms and soles.</li>
+              <li data-i18n="dashboard.check.4">Watch feeding and alertness closely.</li>
+            </ul>
+          </article>
+
+          <article class="card dash-ref-card dash-ref-warn">
+            <div class="dash-ref-header">
+              <div class="card-icon-wrap amber">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2a1 1 0 0 1 .894.553l7 14A1 1 0 0 1 17 18H3a1 1 0 0 1-.894-1.447l7-14A1 1 0 0 1 10 2Zm0 4a1 1 0 0 0-1 1v4a1 1 0 1 0 2 0V7a1 1 0 0 0-1-1Zm0 8.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor"/></svg>
+              </div>
+              <h3 data-i18n="dashboard.warning_signs">Warning signs</h3>
+            </div>
+            <ul class="dash-ref-list">
+              <li data-i18n="dashboard.warning.1">Difficulty waking for feeds</li>
+              <li data-i18n="dashboard.warning.2">Poor feeding</li>
+              <li data-i18n="dashboard.warning.3">Floppiness or unusual drowsiness</li>
+              <li data-i18n="dashboard.warning.4">Dark urine or pale stool</li>
+            </ul>
+          </article>
+        </div>
+
+      </section>
+
+      <!-- PROFILE -->
+      <section class="content-section" id="profile">
+        <div class="two-col-layout">
+          <section class="card form-card">
+            <div class="card-header">
+              <h3 data-i18n="profile.title">Baby profile</h3>
+              <p class="section-text" data-i18n="profile.text">Save your baby's details once. The app will use them to calculate age automatically for screening.</p>
+            </div>
+            <form id="profileForm" autocomplete="off">
+              <div class="field-row">
+                <div class="field">
+                  <label for="baby_name" data-i18n="profile.baby_name">Baby name</label>
+                  <input type="text" id="baby_name" name="baby_name" required placeholder="Enter baby's name" />
+                </div>
+                <div class="field">
+                  <label for="parent_name" data-i18n="profile.parent_name">Parent name</label>
+                  <input type="text" id="parent_name" name="parent_name" placeholder="Enter parent name" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="date_of_birth" data-i18n="profile.date_of_birth">Date of birth</label>
+                  <input type="date" id="date_of_birth" name="date_of_birth" required />
+                </div>
+                <div class="field">
+                  <label for="time_of_birth" data-i18n="profile.time_of_birth">Time of birth</label>
+                  <input type="time" id="time_of_birth" name="time_of_birth" required />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="sex" data-i18n="profile.sex">Sex</label>
+                  <select id="sex" name="sex">
+                    <option value="" data-i18n="common.select">Select</option>
+                    <option value="male" data-i18n="common.male">Male</option>
+                    <option value="female" data-i18n="common.female">Female</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="gestational_age_weeks" data-i18n="profile.gestational_age">Gestational age (weeks)</label>
+                  <input type="number" id="gestational_age_weeks" name="gestational_age_weeks" min="20" max="45" placeholder="e.g. 38" />
+                </div>
+              </div>
+              <button type="submit" class="btn-primary full-width" id="saveProfileBtn" data-i18n="profile.save">Save profile</button>
+            </form>
+          </section>
+
+          <aside class="card result-card">
+            <div class="card-header">
+              <h3 data-i18n="profile.saved_title">Saved profile</h3>
+            </div>
+            <div id="profileEmptyState" class="empty-state" data-i18n="profile.empty">No baby profile saved yet.</div>
+            <div id="profileContent" class="hidden profile-details">
+              <div class="profile-row"><span data-i18n="profile.baby_name">Baby name</span><strong id="profileBabyName"></strong></div>
+              <div class="profile-row"><span data-i18n="profile.parent_name">Parent name</span><strong id="profileParentName"></strong></div>
+              <div class="profile-row"><span data-i18n="profile.date_of_birth">Date of birth</span><strong id="profileDob"></strong></div>
+              <div class="profile-row"><span data-i18n="profile.time_of_birth">Time of birth</span><strong id="profileTob"></strong></div>
+              <div class="profile-row"><span data-i18n="profile.sex">Sex</span><strong id="profileSex"></strong></div>
+              <div class="profile-row"><span data-i18n="profile.gestational_age">Gestational age</span><strong id="profileGestAge"></strong></div>
+              <div class="profile-row highlight"><span data-i18n="profile.current_age_hours">Age in hours</span><strong id="profileAgeHours"></strong></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- SCREENING -->
+      <section class="content-section" id="screening">
+        <div class="two-col-layout">
+          <section class="card form-card">
+            <div class="card-header">
+              <h3 data-i18n="screening.title">Baby screening form</h3>
+              <p class="section-text" data-i18n="screening.text">If a baby profile is saved, age in hours will be filled automatically.</p>
+            </div>
+
+            <form id="screeningForm" autocomplete="off">
+              <input type="hidden" id="ui_language" name="ui_language" value="en" />
+              <input type="hidden" id="user_latitude" name="user_latitude" />
+              <input type="hidden" id="user_longitude" name="user_longitude" />
+              <!-- <input type="text" id="user_state" name="user_state" placeholder="e.g. Ogun" /> -->
+
+              <!-- Step 1: Basic info -->
+              <div class="form-step">
+                <div class="form-step-label">Baby details</div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="age_hours" data-i18n="screening.age_hours">Baby age in hours</label>
+                    <input type="number" id="age_hours" name="age_hours" min="0" placeholder="e.g. 48" />
+                    <small class="helper-text" data-i18n="screening.age_helper">Auto-filled from saved baby profile.</small>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="user_state">State</label>
+                    <select id="user_state" name="user_state">
+                      <option value="">-- Select State --</option>
+                      </select>
+                  </div>
+                  <div class="field">
+                    <label for="user_lga">Local Government Area (LGA)</label>
+                    <select id="user_lga" name="user_lga" disabled>
+                      <option value="">-- Select LGA --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label data-i18n="screening.location">Location Services</label>
+                  <button type="button" class="btn-location" id="getLocationBtn" data-i18n="screening.use_location">Use my current location</button>
+                  <small class="helper-text" id="locationStatus" data-i18n="screening.location_not_set">Location not yet set.</small>
+                </div>
+              </div>
+
+              <!-- Step 2: Skin tone calibration -->
+              <div class="form-step">
+                <div class="form-step-label">Baby's skin tone</div>
+                <p class="section-text" style="margin-bottom:14px;">This helps adjust detection sensitivity. Jaundice can be harder to see on darker skin.</p>
+                <div class="skin-tone-grid" id="skinToneGrid">
+                  <label class="skin-tone-option">
+                    <input type="radio" name="skin_tone_category" value="very_light" />
+                    <div class="skin-tone-swatch" style="background:#f8d5b4;"></div>
+                    <span>Very light</span>
+                  </label>
+                  <label class="skin-tone-option">
+                    <input type="radio" name="skin_tone_category" value="light" />
+                    <div class="skin-tone-swatch" style="background:#e8b98a;"></div>
+                    <span>Light</span>
+                  </label>
+                  <label class="skin-tone-option">
+                    <input type="radio" name="skin_tone_category" value="medium" />
+                    <div class="skin-tone-swatch" style="background:#c68642;"></div>
+                    <span>Medium</span>
+                  </label>
+                  <label class="skin-tone-option">
+                    <input type="radio" name="skin_tone_category" value="medium_dark" />
+                    <div class="skin-tone-swatch" style="background:#8d5524;"></div>
+                    <span>Medium dark</span>
+                  </label>
+                  <label class="skin-tone-option">
+                    <input type="radio" name="skin_tone_category" value="dark" />
+                    <div class="skin-tone-swatch" style="background:#4a2912;"></div>
+                    <span>Dark</span>
+                  </label>
+                </div>
+                <p class="skin-tone-note" id="skinToneNote"></p>
+              </div>
+
+              <!-- Step 3: Feeding — big tap buttons -->
+              <div class="form-step">
+                <div class="form-step-label" data-i18n="screening.feeding">How is the baby feeding?</div>
+                <div class="feeding-toggle">
+                  <label class="feeding-option feeding-good">
+                    <input type="radio" name="feeding" value="good" checked />
+                    <div class="feeding-option-inner">
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11.5l5 5 9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span data-i18n="feeding.good">Good</span>
+                      <small>Latching and sucking normally</small>
+                    </div>
+                  </label>
+                  <label class="feeding-option feeding-poor">
+                    <input type="radio" name="feeding" value="poor" />
+                    <div class="feeding-option-inner">
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 7v6M11 15v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.6"/></svg>
+                      <span data-i18n="feeding.poor">Poor</span>
+                      <small>Struggling to feed or refusing</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Step 4: Image upload -->
+              <div class="form-step">
+                <div class="form-step-label" data-i18n="screening.upload_image">Baby photo</div>
+
+                <!-- Camera guidance panel -->
+                <div class="camera-guidance" id="cameraGuidance">
+                  <div class="camera-frame">
+                    <div class="camera-frame-corner tl"></div>
+                    <div class="camera-frame-corner tr"></div>
+                    <div class="camera-frame-corner bl"></div>
+                    <div class="camera-frame-corner br"></div>
+                    <div class="camera-face-guide">
+                      <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                        <ellipse cx="40" cy="36" rx="22" ry="26" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                        <circle cx="32" cy="32" r="3" fill="rgba(255,255,255,0.4)"/>
+                        <circle cx="48" cy="32" r="3" fill="rgba(255,255,255,0.4)"/>
+                        <path d="M33 44 Q40 50 47 44" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      </svg>
+                    </div>
+                    <div class="camera-tip" id="cameraTip">Position baby's face in the frame</div>
+                  </div>
+                  <div class="camera-checks" id="cameraChecks">
+                    <div class="camera-check" id="checkLight">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.9 2.9l1.06 1.06M10.04 10.04l1.06 1.06M2.9 11.1l1.06-1.06M10.04 3.96l1.06-1.06" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                      Natural light
+                    </div>
+                    <div class="camera-check" id="checkFocus">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
+                      Face visible
+                    </div>
+                    <div class="camera-check" id="checkEyes">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7C1 7 3.5 3 7 3s6 4 6 4-2.5 4-6 4S1 7 1 7z" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.8" fill="currentColor"/></svg>
+                      Eyes clear
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <div class="file-upload-wrap">
+                    <input type="file" id="image" name="image" accept="image/*" capture="environment" required />
+                    <div class="file-upload-label" id="fileUploadLabel">
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="6" width="24" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="15" r="4.5" stroke="currentColor" stroke-width="1.6"/><path d="M9 6l1.5-3h7L19 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span>Take a photo or choose from gallery</span>
+                      <small class="helper-text" data-i18n="screening.image_helper">Use natural light. Focus on the face and eyes.</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="preview-wrap">
+                  <img id="imagePreview" class="image-preview hidden" alt="Preview" />
+                  <div class="image-quality-bar hidden" id="imageQualityBar">
+                    <div class="quality-label">Image quality</div>
+                    <div class="quality-track">
+                      <div class="quality-fill" id="qualityFill"></div>
+                    </div>
+                    <div class="quality-text" id="qualityText"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Step 5: Signs — grouped by severity -->
+              <div class="form-step">
+                <div class="form-step-label" data-i18n="screening.signs">Signs to check</div>
+
+                <!-- Urgent signs -->
+                <div class="signs-group">
+                  <div class="signs-group-header signs-urgent-header">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1 12h12L7 1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 5v3M7 9.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Urgent signs — seek help immediately if present
+                  </div>
+                  <div class="checks-grid">
+                    <label class="check-item check-urgent">
+                      <input type="checkbox" name="difficult_to_wake" />
+                      <span data-i18n="signs.difficult_to_wake">Difficult to wake for feeds</span>
+                    </label>
+                    <label class="check-item check-urgent">
+                      <input type="checkbox" name="floppy_or_unusually_drowsy" />
+                      <span data-i18n="signs.floppy">Floppy or unusually drowsy</span>
+                    </label>
+                    <label class="check-item check-urgent">
+                      <input type="checkbox" name="jaundice_first_24h" />
+                      <span data-i18n="signs.first24h">Yellowing in first 24 hours</span>
+                    </label>
+                    <label class="check-item check-urgent">
+                      <input type="checkbox" name="dark_urine" />
+                      <span data-i18n="signs.dark_urine">Dark urine</span>
+                    </label>
+                    <label class="check-item check-urgent">
+                      <input type="checkbox" name="pale_stool" />
+                      <span data-i18n="signs.pale_stool">Pale stool</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Watch signs -->
+                <div class="signs-group">
+                  <div class="signs-group-header signs-watch-header">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Watch closely — report to health worker
+                  </div>
+                  <div class="checks-grid">
+                    <label class="check-item check-watch">
+                      <input type="checkbox" name="yellow_eyes" />
+                      <span data-i18n="signs.yellow_eyes">Yellow tinge in whites of eyes</span>
+                    </label>
+                    <label class="check-item check-watch">
+                      <input type="checkbox" name="yellow_gums" />
+                      <span data-i18n="signs.yellow_gums">Yellow tinge in the gums</span>
+                    </label>
+                    <label class="check-item check-watch">
+                      <input type="checkbox" name="yellow_palms_or_soles" />
+                      <span data-i18n="signs.yellow_palms">Yellow palms or soles</span>
+                    </label>
+                    <label class="check-item check-watch">
+                      <input type="checkbox" name="jaundice_spreading" />
+                      <span data-i18n="signs.spreading">Yellowing appears to be spreading</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Context -->
+                <div class="signs-group">
+                  <div class="signs-group-header signs-context-header">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M7 6.5V10M7 4v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Additional context
+                  </div>
+                  <div class="checks-grid">
+                    <label class="check-item check-context">
+                      <input type="checkbox" name="darker_skin_tone" />
+                      <span data-i18n="signs.darker_skin">Darker skin baby</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="form-actions">
+                <button type="submit" class="btn-primary btn-submit-screening" id="submitBtn" data-i18n="screening.submit">Analyze screening</button>
+                <button type="button" class="btn-clear" id="resetScreeningBtn" data-i18n="screening.clear">Clear form</button>
+              </div>
+
+            </form>
+          </section>
+
+          <aside class="card result-card sticky-card">
+            <div class="card-header">
+              <h3 data-i18n="result.title">Screening result</h3>
+            </div>
+            <div class="mode-toggle">
+              <button type="button" class="mode-btn active" id="parentModeBtn" data-i18n="mode.parent">Parent View</button>
+              <button type="button" class="mode-btn" id="healthWorkerModeBtn" data-i18n="mode.health_worker">Health Worker</button>
+            </div>
+            <div id="emptyState" class="result-empty-state">
+              <div class="result-empty-icon">
+                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+                  <circle cx="19" cy="19" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+                  <path d="M19 11v9M19 24v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <p data-i18n="result.empty">Submit the form to view the result.</p>
+            </div>
+            <div id="resultContent" class="hidden">
+              <div id="parentView">
+                <div class="trust-banner">
+                  <strong data-i18n="trust.title">This is a screening support tool.</strong>
+                  <p data-i18n="trust.body">It does not replace a doctor, midwife, health worker, or bilirubin test.</p>
+                </div>
+                <div class="parent-status-block" id="parentStatusBlock">
+                  <div class="parent-status-icon" id="parentStatusIcon"></div>
+                  <div class="parent-status-pill" id="statusPill">Pending</div>
+                  <p class="parent-status-message" id="parentMessage"></p>
+                </div>
+                <div class="parent-action-block">
+                  <div class="parent-action-label" data-i18n="result.what_next">What to do next</div>
+                  <ul class="parent-steps-list" id="nextStepsList"></ul>
+                </div>
+                <div class="result-group">
+                  <h4 data-i18n="result.facilities">Nearby facilities</h4>
+                  <div id="facilityList" class="facility-list"></div>
+                </div>
+                <details class="parent-notes-box">
+                  <summary data-i18n="result.notes">Additional notes</summary>
+                  <ul id="notesList" class="parent-notes-list"></ul>
+                </details>
+              </div>
+              <div id="healthWorkerView" class="hidden">
+                <div class="hw-summary-banner" id="hwSummaryBanner">
+                  <div class="hw-banner-left">
+                    <span class="hw-banner-label">Final Decision</span>
+                    <strong class="hw-banner-decision" id="hwFinalDecision"></strong>
+                  </div>
+                  <div class="hw-status-chip" id="hwStatusChip"></div>
+                </div>
+                <div class="hw-grid">
+                  <div class="hw-data-block">
+                    <span class="hw-data-label">Image Prediction</span>
+                    <strong class="hw-data-value" id="imagePrediction"></strong>
+                  </div>
+                  <div class="hw-data-block">
+                    <span class="hw-data-label">Confidence</span>
+                    <strong class="hw-data-value" id="imageConfidence"></strong>
+                  </div>
+                  <div class="hw-data-block">
+                    <span class="hw-data-label">Confidence Band</span>
+                    <strong class="hw-data-value" id="confidenceBand"></strong>
+                  </div>
+                  <div class="hw-data-block">
+                    <span class="hw-data-label">Baby Age</span>
+                    <strong class="hw-data-value" id="resultAgeHours"></strong>
+                  </div>
+                  <div class="hw-data-block hw-data-full">
+                    <span class="hw-data-label">Raw Triage Level</span>
+                    <strong class="hw-data-value" id="triageLevel"></strong>
+                  </div>
+                  <div class="hw-data-block hw-data-full">
+                    <span class="hw-data-label">Raw Triage Reason</span>
+                    <span class="hw-data-text" id="triageReason"></span>
+                  </div>
+                  <div class="hw-data-block hw-data-full">
+                    <span class="hw-data-label">Final Decision Reason</span>
+                    <span class="hw-data-text" id="finalDecisionReason"></span>
+                  </div>
+                  <input type="hidden" id="finalDecision" />
+                </div>
+                <div class="hw-section-title">Recommended Next Steps</div>
+                <ul class="hw-steps-list" id="hwNextStepsList"></ul>
+                <div class="hw-section-title">Nearby Facilities</div>
+                <div id="hwFacilityList" class="facility-list"></div>
+                <div class="hw-section-title">Clinical Notes</div>
+                <ul class="hw-notes-list" id="hwNotesList"></ul>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="content-section" id="history">
+        <div class="card form-card">
+          <div class="card-header">
+            <h3 data-i18n="history.title">Screening history</h3>
+            <p class="section-text" data-i18n="history.text">Review previous screening results and see how decisions changed over time.</p>
+          </div>
+          <button class="btn-handoff" id="handoffBtn" title="Share with health worker">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.4"/><rect x="4" y="4" width="4" height="4" fill="currentColor"/><rect x="10" y="4" width="4" height="4" fill="currentColor"/><rect x="4" y="10" width="4" height="4" fill="currentColor"/><rect x="11" y="11" width="2" height="2" fill="currentColor"/><rect x="13" y="11" width="2" height="2" fill="currentColor" opacity="0.5"/><rect x="11" y="13" width="2" height="2" fill="currentColor" opacity="0.5"/><rect x="13" y="13" width="2" height="2" fill="currentColor"/></svg>
+            Share with clinic
+          </button>
+
+          <!-- Trend chart — only shows when 2+ screenings exist -->
+          <div id="trendChartWrap" class="trend-chart-wrap hidden">
+            <div class="trend-chart-header">
+              <div class="trend-chart-title">Jaundice risk trajectory</div>
+              <div class="trend-chart-sub">Based on triage decisions over time. Earlier screenings on the left.</div>
+            </div>
+            <div class="trend-chart-body">
+              <div class="trend-y-labels">
+                <span class="trend-y-label urgent">Urgent</span>
+                <span class="trend-y-label same-day">Same-day</span>
+                <span class="trend-y-label monitor">Monitor</span>
+              </div>
+              <div class="trend-canvas-wrap">
+                <canvas id="trendCanvas"></canvas>
+                <div class="trend-x-labels" id="trendXLabels"></div>
+              </div>
+            </div>
+            <div class="trend-legend">
+              <span class="trend-legend-item trend-red">Urgent</span>
+              <span class="trend-legend-item trend-amber">Same-day</span>
+              <span class="trend-legend-item trend-green">Monitor</span>
+            </div>
+          </div>
+
+          <div id="historyEmptyState" class="empty-state" data-i18n="history.empty">No screening history yet.</div>
+          <div id="historyList" class="history-list hidden"></div>
+        </div>
+      </section>
+
+      <!-- CHW MODE -->
+      <section class="content-section" id="chw">
+        <div class="chw-hero">
+          <div>
+            <span class="hero-tag" data-i18n="chw.tag">Community newborn support</span>
+            <h3 data-i18n="chw.title">CHW / HelpMum Mode</h3>
+            <p data-i18n="chw.intro">A community health worker workflow for assisted newborn jaundice screening, follow-up reminders, maternal education, and referral support.</p>
+          </div>
+          <div class="chw-badge"><span data-i18n="chw.badge">Community-aligned care pathway</span></div>
+        </div>
+
+        <div class="chw-grid">
+          <!-- Caseload manager — full width -->
+          <article class="card chw-card chw-wide">
+            <div class="card-header">
+              <div class="card-header-row">
+                <div>
+                  <h3>Baby caseload</h3>
+                  <p class="section-text">Track multiple babies across different households.</p>
+                </div>
+                <button class="btn-primary" id="addCaseBtn">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  Add baby
+                </button>
+              </div>
+            </div>
+
+            <!-- Add case form — hidden by default -->
+            <div class="add-case-form hidden" id="addCaseForm">
+              <div class="field-row">
+                <div class="field">
+                  <label>Baby name</label>
+                  <input type="text" id="caseNameInput" placeholder="e.g. Baby Adewale" />
+                </div>
+                <div class="field">
+                  <label>Parent / Household</label>
+                  <input type="text" id="caseHouseholdInput" placeholder="e.g. Adewale household" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Date of birth</label>
+                  <input type="date" id="caseDobInput" />
+                </div>
+                <div class="field">
+                  <label>Time of birth</label>
+                  <input type="time" id="caseTobInput" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Gestational age (weeks)</label>
+                <input type="number" id="caseGestInput" min="20" max="45" placeholder="e.g. 38" />
+              </div>
+              <div class="form-actions">
+                <button class="btn-primary" id="saveCaseBtn">Save to caseload</button>
+                <button class="btn-clear" id="cancelCaseBtn">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Caseload list -->
+            <div id="caseloadEmpty" class="empty-state" style="margin-top:14px;">
+              No babies in caseload yet. Add a baby to begin tracking.
+            </div>
+            <div id="caseloadList" class="caseload-list hidden"></div>
+          </article>
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="chw.actions.title">Quick actions</h3></div>
+            <div class="chw-actions">
+              <button type="button" class="btn-primary" id="chwStartScreeningBtn" data-i18n="chw.actions.screening">Start assisted screening</button>
+              <button type="button" class="btn-secondary" id="chwViewHistoryBtn" data-i18n="chw.actions.history">View screening history</button>
+            </div>
+          </article>
+
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="chw.followup.title">Postnatal follow-up checklist</h3></div>
+            <ul class="chw-checklist">
+              <li data-i18n="chw.followup.day1">Day 1: Check feeding, alertness, urine and stool.</li>
+              <li data-i18n="chw.followup.day2">Day 2-3: Check eyes, gums, palms and soles for yellowing.</li>
+              <li data-i18n="chw.followup.day7">Day 7: Review feeding, weight concern and persistent yellowing.</li>
+              <li data-i18n="chw.followup.day14">Day 14: Refer if jaundice is still present or worsening.</li>
+            </ul>
+          </article>
+
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="reminder.title">Follow-up reminders</h3></div>
+            <p class="section-text" data-i18n="reminder.text">Suggested newborn follow-up reminders based on baby age and jaundice risk.</p>
+            <button type="button" class="btn-enable-notifications" id="enableNotificationsBtn">
+              Enable follow-up reminders
+            </button>
+            <div id="reminderList" class="reminder-list">
+              <div class="empty-state" data-i18n="reminder.empty">Create a baby profile to generate reminders.</div>
+            </div>
+          </article>
+
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="voice.title">Voice guidance</h3></div>
+            <p class="section-text" data-i18n="voice.text">Read simple newborn jaundice guidance aloud for parents.</p>
+            <div class="voice-actions">
+              <button type="button" class="btn-primary" id="playVoiceBtn" data-i18n="voice.play">Play guidance</button>
+              <button type="button" class="btn-secondary" id="stopVoiceBtn" data-i18n="voice.stop">Stop</button>
+            </div>
+            <p class="helper-text" id="voiceStatus" data-i18n="voice.ready">Voice guidance ready.</p>
+          </article>
+
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="chw.referral.title">Referral pathway</h3></div>
+            <div class="referral-flow">
+              <div class="referral-step" data-i18n="chw.referral.home">Mother / Home</div>
+              <div class="referral-arrow">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M11 5l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="referral-step" data-i18n="chw.referral.chw">CHW / Midwife</div>
+              <div class="referral-arrow">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M11 5l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="referral-step" data-i18n="chw.referral.phc">PHC</div>
+              <div class="referral-arrow">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M11 5l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="referral-step highlight-step" data-i18n="chw.referral.hospital">Hospital</div>
+            </div>
+          </article>
+
+          <article class="card chw-card">
+            <div class="card-header"><h3 data-i18n="chw.risk.title">What CHWs should prioritize</h3></div>
+            <ul class="chw-checklist">
+              <li data-i18n="chw.risk.1">Jaundice in the first 24 hours.</li>
+              <li data-i18n="chw.risk.2">Poor feeding with yellowing or unusual sleepiness.</li>
+              <li data-i18n="chw.risk.3">Difficulty waking, floppiness, dark urine or pale stool.</li>
+              <li data-i18n="chw.risk.4">Darker skin babies where yellowing may be harder to detect.</li>
+            </ul>
+          </article>
+
+          <article class="card chw-card chw-wide">
+            <div class="card-header">
+              <h3>Screening data export</h3>
+              <p class="section-text">Export all screening history as a CSV file for clinic reporting or handover.</p>
+            </div>
+            <div class="export-actions">
+              <button type="button" class="btn-primary" id="exportCsvBtn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export as CSV
+              </button>
+              <button type="button" class="btn-secondary" id="exportJsonBtn">Export as JSON</button>
+            </div>
+            <div id="exportSummary" class="export-summary hidden"></div>
+          </article>
+
+          <article class="card chw-card chw-wide">
+            <div class="card-header"><h3 data-i18n="chw.alignment.title">Why this aligns with HelpMum-style innovation</h3></div>
+            <p data-i18n="chw.alignment.body">Designed for parents and community health workers, this feature supports early monitoring, structured follow-up, and timely referral when a newborn may need care.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- EDUCATION -->
+      <section class="content-section" id="education">
+        <div class="edu-grid">
+          <article class="card education-card"><div class="card-header"><h3 data-i18n="edu.what_is.title"></h3></div><p data-i18n="edu.what_is.body"></p></article>
+          <article class="card education-card">
+            <div class="card-header"><h3 data-i18n="edu.check.title"></h3></div>
+            <ul>
+              <li data-i18n="edu.check.1"></li><li data-i18n="edu.check.2"></li>
+              <li data-i18n="edu.check.3"></li><li data-i18n="edu.check.4"></li>
+            </ul>
+          </article>
+          <article class="card education-card"><div class="card-header"><h3 data-i18n="edu.dark_skin.title"></h3></div><p data-i18n="edu.dark_skin.body"></p></article>
+          <article class="card education-card">
+            <div class="card-header"><h3 data-i18n="edu.urgent.title"></h3></div>
+            <ul>
+              <li data-i18n="edu.urgent.1"></li><li data-i18n="edu.urgent.2"></li><li data-i18n="edu.urgent.3"></li>
+              <li data-i18n="edu.urgent.4"></li><li data-i18n="edu.urgent.5"></li>
+            </ul>
+          </article>
+          <article class="card education-card">
+            <div class="card-header"><h3 data-i18n="edu.what_to_do.title"></h3></div>
+            <ul>
+              <li data-i18n="edu.what_to_do.1"></li><li data-i18n="edu.what_to_do.2"></li>
+              <li data-i18n="edu.what_to_do.3"></li><li data-i18n="edu.what_to_do.4"></li>
+            </ul>
+          </article>
+          <article class="card education-card">
+            <div class="card-header"><h3 data-i18n="edu.what_not_to_do.title"></h3></div>
+            <ul>
+              <li data-i18n="edu.what_not_to_do.1"></li><li data-i18n="edu.what_not_to_do.2"></li>
+              <li data-i18n="edu.what_not_to_do.3"></li><li data-i18n="edu.what_not_to_do.4"></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- CARE GUIDE -->
+      <section class="content-section" id="care">
+        <div class="care-grid">
+          <article class="card care-card">
+            <div class="card-header"><h3 data-i18n="care.feeding.title"></h3></div>
+            <p data-i18n="care.feeding.body"></p>
+            <ul><li data-i18n="care.feeding.1"></li><li data-i18n="care.feeding.2"></li><li data-i18n="care.feeding.3"></li></ul>
+          </article>
+          <article class="card care-card">
+            <div class="card-header"><h3 data-i18n="care.mother.title"></h3></div>
+            <ul><li data-i18n="care.mother.1"></li><li data-i18n="care.mother.2"></li><li data-i18n="care.mother.3"></li><li data-i18n="care.mother.4"></li></ul>
+          </article>
+          <article class="card care-card">
+            <div class="card-header"><h3 data-i18n="care.maternal.title"></h3></div>
+            <p data-i18n="care.maternal.body"></p>
+          </article>
+          <article class="card care-card">
+            <div class="card-header"><h3 data-i18n="care.nutrition.title"></h3></div>
+            <ul><li data-i18n="care.nutrition.1"></li><li data-i18n="care.nutrition.2"></li><li data-i18n="care.nutrition.3"></li><li data-i18n="care.nutrition.4"></li></ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- NOMOGRAM -->
+      <section class="content-section" id="nomogram">
+        <div class="card form-card">
+          <div class="card-header">
+            <h3>Bilirubin Nomogram Tool</h3>
+            <p class="section-text">Enter the baby's bilirubin level and age in hours to determine the risk zone based on the Bhutani nomogram. Use this when a bilirubin test result is available.</p>
+          </div>
+
+          <div class="nomo-trust">
+            <strong>Clinical reference tool only.</strong>
+            This nomogram is based on the Bhutani (1999) hour-specific bilirubin percentile chart for term and near-term infants. It does not replace clinical judgement.
+          </div>
+
+          <div class="nomo-inputs">
+            <div class="field-row">
+              <div class="field">
+                <label for="nomoBilirubin">Bilirubin level</label>
+                <div class="nomo-input-unit">
+                  <input type="number" id="nomoBilirubin" placeholder="e.g. 12.5" step="0.1" min="0" max="50" />
+                  <div class="nomo-unit-toggle">
+                    <button class="nomo-unit-btn active" data-unit="mgdl">mg/dL</button>
+                    <button class="nomo-unit-btn" data-unit="umol">µmol/L</button>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="nomoAgeHours">Baby age in hours</label>
+                <input type="number" id="nomoAgeHours" placeholder="e.g. 48" min="0" max="168" />
+                <small class="helper-text">Age must be between 0 and 168 hours (7 days)</small>
+              </div>
+            </div>
+            <div class="field">
+              <label for="nomoGestAge">Gestational age (weeks)</label>
+              <select id="nomoGestAge">
+                <option value="term">38 weeks or more (term)</option>
+                <option value="late_preterm">35–37 weeks (late preterm)</option>
+                <option value="early_preterm">Less than 35 weeks (early preterm)</option>
+              </select>
+              <small class="helper-text">Preterm babies have lower intervention thresholds</small>
+            </div>
+            <button class="btn-primary" id="nomoCalcBtn" style="margin-top:8px;">
+              Calculate zone
+            </button>
+          </div>
+
+          <!-- Visual nomogram chart -->
+          <div class="nomo-chart-wrap" id="nomoChartWrap">
+            <div class="nomo-chart-title">Bhutani Nomogram — Risk Zones</div>
+            <div class="nomo-canvas-wrap">
+              <canvas id="nomoCanvas"></canvas>
+              <div class="nomo-y-axis">
+                <span>20</span><span>15</span><span>10</span><span>5</span><span>0</span>
+              </div>
+              <div class="nomo-x-axis">
+                <span>0h</span><span>24h</span><span>48h</span><span>72h</span><span>96h</span><span>120h</span><span>144h</span><span>168h</span>
+              </div>
+            </div>
+            <div class="nomo-legend">
+              <span class="nomo-zone-chip zone-low">Low risk</span>
+              <span class="nomo-zone-chip zone-low-int">Low intermediate</span>
+              <span class="nomo-zone-chip zone-high-int">High intermediate</span>
+              <span class="nomo-zone-chip zone-high">High risk</span>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="nomo-result hidden" id="nomoResult">
+            <div class="nomo-result-zone" id="nomoZoneBadge"></div>
+            <div class="nomo-result-message" id="nomoZoneMessage"></div>
+            <div class="nomo-result-action" id="nomoZoneAction"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="content-section" id="analytics">
+        <div class="analytics-hero">
+          <div>
+            <span class="hero-tag">Population health intelligence</span>
+            <h3>Screening analytics</h3>
+            <p>Aggregated, anonymised insights from all screening records. Use this for community reporting and health system handover.</p>
+          </div>
+          <button class="btn-primary" id="refreshAnalyticsBtn">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13.5 7.5A6 6 0 1 1 7.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.5 1.5v6h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="analytics-stat-grid" id="analyticsStatGrid">
+          <div class="analytics-stat-card">
+            <div class="analytics-stat-value" id="statTotal">—</div>
+            <div class="analytics-stat-label">Total screenings</div>
+          </div>
+          <div class="analytics-stat-card stat-red">
+            <div class="analytics-stat-value" id="statUrgent">—</div>
+            <div class="analytics-stat-label">Urgent results</div>
+          </div>
+          <div class="analytics-stat-card stat-amber">
+            <div class="analytics-stat-value" id="statSameDay">—</div>
+            <div class="analytics-stat-label">Same-day results</div>
+          </div>
+          <div class="analytics-stat-card stat-green">
+            <div class="analytics-stat-value" id="statMonitor">—</div>
+            <div class="analytics-stat-label">Monitor at home</div>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="card analytics-card">
+            <div class="card-header"><h3>Risk distribution</h3></div>
+            <div class="analytics-donut-wrap">
+              <canvas id="donutCanvas" width="180" height="180"></canvas>
+              <div class="donut-center" id="donutCenter"></div>
+            </div>
+          </div>
+
+          <div class="card analytics-card">
+            <div class="card-header"><h3>Detection confidence</h3></div>
+            <div class="analytics-confidence-wrap" id="confidenceWrap"></div>
+          </div>
+
+          <div class="card analytics-card">
+            <div class="card-header"><h3>Age at screening</h3></div>
+            <canvas id="ageBarCanvas" height="160"></canvas>
+          </div>
+
+          <div class="card analytics-card">
+            <div class="card-header"><h3>Screening timeline</h3></div>
+            <canvas id="timelineCanvas" height="160"></canvas>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="card-header">
+            <h3>Data summary for reporting</h3>
+            <p class="section-text">Ready-to-paste summary for clinic handover, NGO reports, or Ministry of Health submissions.</p>
+          </div>
+          <div class="analytics-report-wrap">
+            <pre class="analytics-report" id="analyticsReport">Load analytics to generate report...</pre>
+            <button class="btn-secondary" id="copyReportBtn">Copy report</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+    <!-- Mobile bottom navigation -->
+    <nav class="mobile-nav">
+      <button class="mobile-nav-item active" data-section="dashboard">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="12" y="2" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="2" y="12" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="12" y="12" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span data-i18n="nav.dashboard">Dashboard</span>
+      </button>
+      <button class="mobile-nav-item" data-section="screening">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M11 7v4.5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.screening">Screening</span>
+      </button>
+      <button class="mobile-nav-item" data-section="profile">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 19c0-3.866 3.134-7 7-7h.5c3.866 0 7 3.134 7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.profile">Profile</span>
+      </button>
+      <button class="mobile-nav-item" data-section="history">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.history">History</span>
+      </button>
+      <button class="mobile-nav-item" data-section="chw">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 7v8l9 5 9-5V7l-9-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <span data-i18n="nav.chw">CHW</span>
+      </button>
+      <button class="mobile-nav-item" data-section="nomogram">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 19L7 11l4 4 4-6 4 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Nomogram</span>
+      </button>
+    </nav>
+
+    <!-- Mobile result sheet -->
+    <div class="result-sheet-overlay hidden" id="resultSheetOverlay"></div>
+    <div class="result-sheet hidden" id="resultSheet">
+      <div class="result-sheet-handle"></div>
+      <div class="result-sheet-inner" id="resultSheetInner"></div>
+    </div>
+
+    <!-- Caregiver handoff modal -->
+    <div class="handoff-modal-overlay hidden" id="handoffModalOverlay">
+      <div class="handoff-modal">
+        <div class="handoff-modal-header">
+          <h3>Share with health worker</h3>
+          <button class="handoff-close" id="handoffClose">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <p class="section-text">Show this QR code to your doctor, midwife, or health worker so they can see your baby's full screening history.</p>
+        <div class="handoff-qr-wrap">
+          <canvas id="handoffQRCanvas"></canvas>
+        </div>
+        <div class="handoff-summary" id="handoffSummary"></div>
+        <button class="btn-primary full-width" id="handoffCopyBtn">Copy screening summary</button>
+      </div>
+    </div>
+
+    <!-- Follow-up loop closure modal -->
+    <div class="followup-modal-overlay hidden" id="followupModalOverlay">
+      <div class="followup-modal">
+        <div class="followup-modal-header">
+          <div class="followup-modal-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="var(--coral)" stroke-width="1.5"/><path d="M16 10v7M16 19v2" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>What happened next?</h3>
+        </div>
+        <p class="section-text">Your previous screening recommended urgent or same-day care. We want to make sure your baby got the help they needed.</p>
+        <div class="followup-options">
+          <button class="followup-option" data-outcome="attended">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+              <strong>We went to the clinic</strong>
+              <span>Baby was seen by a health worker</span>
+            </div>
+          </button>
+          <button class="followup-option" data-outcome="improving">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 13l4-4 4 4 6-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+              <strong>Baby is improving at home</strong>
+              <span>Symptoms are getting better</span>
+            </div>
+          </button>
+          <button class="followup-option" data-outcome="still_concerned">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M10 7v4M10 13v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <div>
+              <strong>Still concerned</strong>
+              <span>We have not yet seen a health worker</span>
+            </div>
+          </button>
+        </div>
+        <div class="followup-bilirubin">
+          <label for="bilirubinInput">If bilirubin was tested, enter the result (optional)</label>
+          <div class="bilirubin-input-row">
+            <input type="number" id="bilirubinInput" placeholder="e.g. 12.5" step="0.1" min="0" max="50" />
+            <span class="bilirubin-unit">mg/dL</span>
+          </div>
+        </div>
+        <div class="followup-actions">
+          <button class="btn-primary" id="followupSubmitBtn">Save and continue</button>
+          <button class="btn-clear" id="followupDismissBtn">Dismiss</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js?v=14"></script>
+</body>
+</html>
