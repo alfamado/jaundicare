@@ -1,0 +1,62 @@
+# JaundiCare — Production Requirements
+# Stripped of dev/scraper tools, CPU-only PyTorch for Render free tier
+
+# API framework
+fastapi==0.115.0
+uvicorn==0.30.6
+starlette==0.38.6
+python-multipart==0.0.9
+
+# Database
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.9
+greenlet==3.5.1
+
+# AI model — CPU only builds are ~500MB vs 2GB for CUDA
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1+cpu
+torchvision==0.19.1+cpu
+
+# Image processing
+pillow==10.4.0
+
+# Cloud storage
+cloudinary==1.41.0
+
+# Data processing
+numpy==2.1.1
+pandas==3.0.3
+scikit-learn==1.5.2
+scipy==1.17.1
+joblib==1.5.3
+threadpoolctl==3.6.0
+
+# Pydantic
+pydantic==2.9.2
+pydantic_core==2.23.4
+annotated-types==0.7.0
+typing_extensions==4.15.0
+
+# Utils
+python-dotenv==1.0.1
+requests==2.34.2
+python-dateutil==2.9.0.post0
+tzdata==2026.2
+anyio==4.13.0
+h11==0.16.0
+click==8.3.2
+certifi==2026.4.22
+charset-normalizer==3.4.7
+idna==3.11
+urllib3==2.7.0
+packaging==26.2
+filelock==3.28.0
+fsspec==2026.3.0
+networkx==3.6.1
+sympy==1.14.0
+mpmath==1.3.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+six==1.17.0
+colorama==0.4.6
+openpyxl==3.1.5
