@@ -2153,151 +2153,478 @@ Key improvements over the original:
 
 
 
+# import json
+# import math
+# from pathlib import Path
+# from typing import Optional, List
+
+# CURRENT_FILE_PATH = Path(__file__).resolve()
+# BACKEND_ROOT_DIR = CURRENT_FILE_PATH.parent.parent.parent
+# FACILITIES_JSON_PATH = BACKEND_ROOT_DIR / "data_store" / "production_facilities.json"
+
+# _ALL_FACILITIES = []
+
+# def load_facilities_at_startup():
+#     global _ALL_FACILITIES
+#     if FACILITIES_JSON_PATH.exists():
+#         try:
+#             with open(FACILITIES_JSON_PATH, "r", encoding="utf-8") as f:
+#                 _ALL_FACILITIES = json.load(f)
+#             print(f"🌍 [FacilityService] Loaded {len(_ALL_FACILITIES)} facilities successfully.")
+#         except Exception as e:
+#             print(f"❌ [FacilityService] Error reading production file: {str(e)}")
+#             _ALL_FACILITIES = []
+#     else:
+#         print(f"⚠️ [FacilityService] Production file missing at: {FACILITIES_JSON_PATH}")
+
+# load_facilities_at_startup()
+
+# def _normalise_string(text: Optional[str]) -> str:
+#     if not text:
+#         return ""
+#     return str(text).strip().lower().replace(" ", "_")
+
+# def _calculate_haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+#     R = 6371.0  # Earth's radius in kilometers
+#     dlat = math.radians(lat2 - lat1)
+#     dlon = math.radians(lon2 - lon1)
+#     a = (math.sin(dlat / 2) ** 2 + 
+#          math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+#     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+#     return R * c
+
+# def _get_tier_priority(facility_type: str, triage_level: Optional[str]) -> int:
+#     severity = str(triage_level).upper().strip()
+#     is_emergency = any(keyword in severity for keyword in ["RED", "HIGH", "URGENT", "REVIEW"])
+    
+#     if is_emergency:
+#         if facility_type == "tertiary": return 0
+#         elif facility_type == "secondary": return 1
+#         else: return 2
+#     else:
+#         if facility_type == "primary": return 0
+#         elif facility_type == "secondary": return 1
+#         else: return 2
+
+# def get_recommended_facilities(
+#     user_lat: Optional[float] = None,
+#     user_lon: Optional[float] = None,
+#     user_state: Optional[str] = None,
+#     user_lga: Optional[str] = None,
+#     triage_level: Optional[str] = None,
+#     max_results: int = 5,
+# ) -> List[dict]:
+    
+#     if not _ALL_FACILITIES:
+#         load_facilities_at_startup()
+
+#     # Convert empty form strings ("") cleanly to standard None objects
+#     if user_state is not None and str(user_state).strip() == "":
+#         user_state = None
+
+#     if user_lga is not None and str(user_lga).strip() == "":
+#         user_lga = None
+
+#     # 🎯 FIXED: Initialized variables correctly so they are visible to Step 1 loop
+#     target_state = _normalise_string(user_state) if user_state else None
+#     target_lga = user_lga.strip().lower() if user_lga else None
+
+#     try:
+#         lat = float(user_lat) if user_lat is not None else 0.0
+#         lon = float(user_lon) if user_lon is not None else 0.0
+#         has_gps = (abs(lat) > 0.1 and abs(lon) > 0.1)  # Verifies coordinates are genuinely populated
+#     except (ValueError, TypeError):
+#         lat, lon = 0.0, 0.0
+#         has_gps = False
+
+#     # Step 1: Filter by manual location values
+#     candidates = []
+#     for f in _ALL_FACILITIES:
+#         # Match State string
+#         if target_state and _normalise_string(f.get("state")) != target_state:
+#             continue
+        
+#         # Narrow down to LGA if provided
+#         if target_lga:
+#             fac_lga = f.get("lga")
+#             if fac_lga and target_lga not in str(fac_lga).lower():
+#                 continue
+#         candidates.append(f)
+
+#     # If the text filtering was too strict and left 0 results, fall back to all facilities
+#     # so the app never displays a completely blank screen to a mother in an emergency
+#     if not candidates:
+#         candidates = _ALL_FACILITIES
+
+#     # Step 2: Build responses with robust address key fallbacks
+#     recommended = []
+#     for f in candidates:
+#         distance = None
+#         f_lat = f.get("latitude")
+#         f_lon = f.get("longitude")
+        
+#         if has_gps and f_lat is not None and f_lon is not None:
+#             distance = _calculate_haversine(lat, lon, float(f_lat), float(f_lon))
+
+#         # Robust fallback matching check for common JSON address field conventions
+#         exact_address = f.get("address") or f.get("facility_address") or f.get("formatted_address") or f.get("street")
+#         if not exact_address or exact_address.strip() == "":
+#             exact_address = f"Located in {f.get('lga', 'Central Region')}, {str(f.get('state')).title()} State."
+
+#         item = {
+#             "id": str(f.get("id")),
+#             "name": str(f.get("name")),
+#             "type": str(f.get("type", "primary")).lower(),
+#             "state": str(f.get("state")),
+#             "lga": f.get("lga") if f.get("lga") else "Central Region",
+#             "address": exact_address,
+#             "phone": f.get("phone") or f.get("contact_phone") or "No contact number listed",
+#             "latitude": float(f_lat) if f_lat else 0.0,
+#             "longitude": float(f_lon) if f_lon else 0.0,
+#             "services": f.get("services", ["basic_newborn_care"]),
+#             "osm_id": int(f.get("osm_id", 0)),
+#             "data_quality_verified": bool(f.get("data_quality_verified", False)),
+#             "distance_km": round(distance, 1) if distance is not None else None
+#         }
+#         recommended.append(item)
+
+#     # Step 3: Sort dynamically
+#     if has_gps:
+#         recommended.sort(key=lambda x: (
+#             _get_tier_priority(x["type"], triage_level),
+#             x["distance_km"] if x["distance_km"] is not None else 99999.0
+#         ))
+#     else:
+#         recommended.sort(key=lambda x: (
+#             _get_tier_priority(x["type"], triage_level),
+#             x["name"]
+#         ))
+
+#     return recommended[:max_results]
+
+
+"""
+JaundiCare — Facility Service (v2)
+Adds facility preference (nearest / government / clinic),
+LGA-level search, government-first cost-aware sorting,
+and urgent case override.
+"""
+
 import json
 import math
-from pathlib import Path
-from typing import Optional, List
+from app.config import DATA_STORE_DIR
 
-CURRENT_FILE_PATH = Path(__file__).resolve()
-BACKEND_ROOT_DIR = CURRENT_FILE_PATH.parent.parent.parent
-FACILITIES_JSON_PATH = BACKEND_ROOT_DIR / "data_store" / "production_facilities.json"
+FACILITY_PATH = DATA_STORE_DIR / "facilities.json"
 
-_ALL_FACILITIES = []
+# Facility type tier — lower number = higher priority for government preference
+GOVERNMENT_TIER = {
+    "federal":    1,   # Federal Teaching Hospitals, FMCs
+    "tertiary":   2,   # State specialist/general hospitals
+    "secondary":  3,   # General hospitals
+    "mission":    4,   # Mission/NGO hospitals (often subsidised)
+    "primary":    5,   # PHCs, health posts
+    "private":    6,   # Private hospitals/clinics
+}
 
-def load_facilities_at_startup():
-    global _ALL_FACILITIES
-    if FACILITIES_JSON_PATH.exists():
-        try:
-            with open(FACILITIES_JSON_PATH, "r", encoding="utf-8") as f:
-                _ALL_FACILITIES = json.load(f)
-            print(f"🌍 [FacilityService] Loaded {len(_ALL_FACILITIES)} facilities successfully.")
-        except Exception as e:
-            print(f"❌ [FacilityService] Error reading production file: {str(e)}")
-            _ALL_FACILITIES = []
+# Keywords in facility names that identify government facilities
+FEDERAL_KEYWORDS = [
+    "federal", "university teaching", "university college hospital",
+    "national hospital", "fmc", "luth", "ucth", "uith", "oauth",
+    "abuth", "juth", "unth", "nauth", "bmsh",
+]
+MISSION_KEYWORDS = [
+    "catholic", "methodist", "baptist", "seventh day", "adventist",
+    "anglican", "presbyterian", "mission", "church", "christian",
+]
+PRIVATE_KEYWORDS = [
+    "private", "clinic", "medical centre", "specialist centre",
+]
+
+_facilities_cache = None
+
+
+def load_facilities():
+    global _facilities_cache
+    if _facilities_cache is not None:
+        return _facilities_cache
+    try:
+        with open(FACILITY_PATH, "r", encoding="utf-8") as f:
+            _facilities_cache = json.load(f)
+            print(f"🌍 [FacilityService] Loaded {len(_facilities_cache)} facilities successfully.")
+            return _facilities_cache
+    except Exception as e:
+        print(f"FACILITY LOAD ERROR: {e}")
+        return []
+
+
+def haversine_distance_km(lat1, lon1, lat2, lon2) -> float:
+    r = 6371.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
+    return round(r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 2)
+
+
+def _is_valid_nigeria_coord(lat, lon) -> bool:
+    """Reject OSM coordinates that are clearly wrong for Nigeria."""
+    return (
+        lat is not None and lon is not None
+        and 4.0 <= lat <= 14.0
+        and 2.5 <= lon <= 15.0
+    )
+
+
+def _infer_facility_tier(facility: dict) -> int:
+    """
+    Infer government/private tier from facility name and type.
+    Lower number = shown first when user picks 'Government'.
+    """
+    name = facility.get("name", "").lower()
+    ftype = facility.get("type", "").lower()
+
+    # Check name keywords first — more reliable than OSM type tags
+    for kw in FEDERAL_KEYWORDS:
+        if kw in name:
+            return GOVERNMENT_TIER["federal"]
+
+    for kw in MISSION_KEYWORDS:
+        if kw in name:
+            return GOVERNMENT_TIER["mission"]
+
+    for kw in PRIVATE_KEYWORDS:
+        if kw in name:
+            return GOVERNMENT_TIER["private"]
+
+    # Fall back to OSM type tag
+    if ftype in ("tertiary", "hospital"):
+        return GOVERNMENT_TIER["tertiary"]
+    if ftype == "secondary":
+        return GOVERNMENT_TIER["secondary"]
+    if ftype in ("primary", "health_post", "clinic"):
+        return GOVERNMENT_TIER["primary"]
+
+    return GOVERNMENT_TIER["secondary"]  # default
+
+
+def _filter_by_triage(facilities: list, triage_level: str) -> list:
+    """
+    Clinical filter based on triage level.
+    Urgent → hospitals only (tertiary/secondary).
+    Same-day → any facility.
+    Monitor → PHC/primary preferred but include secondary.
+    """
+    if triage_level == "URGENT_HOSPITAL_REVIEW":
+        filtered = [
+            f for f in facilities
+            if f.get("type") in ("tertiary", "secondary", "hospital")
+            or _infer_facility_tier(f) <= GOVERNMENT_TIER["secondary"]
+        ]
+        # If nothing found, don't return empty — fall back to all
+        return filtered if filtered else facilities
+
+    if triage_level in (
+        "SAME_DAY_CLINIC_REVIEW",
+        "RECHECK_SOON_OR_CLINIC_IF_CONCERNED",
+    ):
+        return facilities
+
+    # GREEN / monitor — prefer primary but include secondary
+    primary = [
+        f for f in facilities
+        if f.get("type") in ("primary", "clinic", "health_post")
+        or _infer_facility_tier(f) >= GOVERNMENT_TIER["primary"]
+    ]
+    return primary if primary else facilities
+
+
+def _sort_by_preference(
+    facilities: list,
+    preference: str,
+    user_lat: float | None,
+    user_lon: float | None,
+    triage_level: str,
+) -> list:
+    """
+    Sort facilities based on user preference:
+    - 'nearest'    → sort purely by distance
+    - 'government' → government tier first, then distance within tier
+    - 'clinic'     → PHC/primary first, then distance within type
+
+    For URGENT cases, always surface nearest tertiary hospital
+    at the top regardless of preference.
+    """
+    # Attach distance to every facility
+    enriched = []
+    for f in facilities:
+        lat = f.get("latitude")
+        lon = f.get("longitude")
+
+        if _is_valid_nigeria_coord(lat, lon) and user_lat and user_lon:
+            dist = haversine_distance_km(user_lat, user_lon, lat, lon)
+        else:
+            dist = None
+
+        enriched.append({
+            **f,
+            "distance_km": dist,
+            "_tier": _infer_facility_tier(f),
+        })
+
+    LARGE = 999999
+
+    if preference == "government":
+        enriched.sort(key=lambda x: (
+            x["_tier"],
+            x["distance_km"] if x["distance_km"] is not None else LARGE,
+        ))
+
+    elif preference == "clinic":
+        # PHC and primary care first, sorted by distance
+        primary   = [f for f in enriched if f["_tier"] >= GOVERNMENT_TIER["primary"]]
+        secondary = [f for f in enriched if f["_tier"] < GOVERNMENT_TIER["primary"]]
+        primary.sort(key=lambda x: x["distance_km"] if x["distance_km"] is not None else LARGE)
+        secondary.sort(key=lambda x: x["distance_km"] if x["distance_km"] is not None else LARGE)
+        enriched = primary + secondary
+
     else:
-        print(f"⚠️ [FacilityService] Production file missing at: {FACILITIES_JSON_PATH}")
+        # 'nearest' — pure distance sort
+        enriched.sort(key=lambda x: x["distance_km"] if x["distance_km"] is not None else LARGE)
 
-load_facilities_at_startup()
+    # URGENT OVERRIDE — always put nearest tertiary hospital first
+    if triage_level == "URGENT_HOSPITAL_REVIEW":
+        urgent = [
+            f for f in enriched
+            if f.get("type") in ("tertiary", "secondary", "hospital")
+            or f["_tier"] <= GOVERNMENT_TIER["tertiary"]
+        ]
+        others = [f for f in enriched if f not in urgent]
+        urgent.sort(key=lambda x: x["distance_km"] if x["distance_km"] is not None else LARGE)
+        enriched = urgent + others
 
-def _normalise_string(text: Optional[str]) -> str:
-    if not text:
-        return ""
-    return str(text).strip().lower().replace(" ", "_")
+    # Clean up internal sort key before returning
+    for f in enriched:
+        f.pop("_tier", None)
 
-def _calculate_haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 6371.0  # Earth's radius in kilometers
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2) ** 2 + 
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
+    return enriched
 
-def _get_tier_priority(facility_type: str, triage_level: Optional[str]) -> int:
-    severity = str(triage_level).upper().strip()
-    is_emergency = any(keyword in severity for keyword in ["RED", "HIGH", "URGENT", "REVIEW"])
-    
-    if is_emergency:
-        if facility_type == "tertiary": return 0
-        elif facility_type == "secondary": return 1
-        else: return 2
-    else:
-        if facility_type == "primary": return 0
-        elif facility_type == "secondary": return 1
-        else: return 2
 
 def get_recommended_facilities(
-    user_lat: Optional[float] = None,
-    user_lon: Optional[float] = None,
-    user_state: Optional[str] = None,
-    user_lga: Optional[str] = None,
-    triage_level: Optional[str] = None,
+    user_lat: float | None = None,
+    user_lon: float | None = None,
+    user_state: str | None = None,
+    user_lga: str | None = None,
+    triage_level: str = "MONITOR_AT_HOME",
+    facility_preference: str = "nearest",   # nearest | government | clinic
     max_results: int = 5,
-) -> List[dict]:
-    
-    if not _ALL_FACILITIES:
-        load_facilities_at_startup()
+) -> list:
+    """
+    Main entry point for facility recommendations.
 
-    # Convert empty form strings ("") cleanly to standard None objects
-    if user_state is not None and str(user_state).strip() == "":
-        user_state = None
+    Search order:
+    1. If GPS available → radius search (25km → 50km → 100km)
+    2. If LGA provided  → LGA-level filter first
+    3. If state only    → state-level filter
+    4. Hard fallback    → nearest in any state
 
-    if user_lga is not None and str(user_lga).strip() == "":
-        user_lga = None
+    Then apply triage filter + preference sort.
+    """
+    facilities = load_facilities()
+    if not facilities:
+        return []
 
-    # 🎯 FIXED: Initialized variables correctly so they are visible to Step 1 loop
-    target_state = _normalise_string(user_state) if user_state else None
-    target_lga = user_lga.strip().lower() if user_lga else None
-
-    try:
-        lat = float(user_lat) if user_lat is not None else 0.0
-        lon = float(user_lon) if user_lon is not None else 0.0
-        has_gps = (abs(lat) > 0.1 and abs(lon) > 0.1)  # Verifies coordinates are genuinely populated
-    except (ValueError, TypeError):
-        lat, lon = 0.0, 0.0
-        has_gps = False
-
-    # Step 1: Filter by manual location values
+    # ── Step 1: Geography filter ──────────────────────────────
     candidates = []
-    for f in _ALL_FACILITIES:
-        # Match State string
-        if target_state and _normalise_string(f.get("state")) != target_state:
-            continue
-        
-        # Narrow down to LGA if provided
-        if target_lga:
-            fac_lga = f.get("lga")
-            if fac_lga and target_lga not in str(fac_lga).lower():
-                continue
-        candidates.append(f)
 
-    # If the text filtering was too strict and left 0 results, fall back to all facilities
-    # so the app never displays a completely blank screen to a mother in an emergency
+    # GPS radius search — most accurate
+    if user_lat and user_lon:
+        for radius in (25, 50, 100, 200):
+            in_radius = [
+                f for f in facilities
+                if _is_valid_nigeria_coord(f.get("latitude"), f.get("longitude"))
+                and haversine_distance_km(
+                    user_lat, user_lon, f["latitude"], f["longitude"]
+                ) <= radius
+            ]
+            if len(in_radius) >= 3:
+                candidates = in_radius
+                break
+
+        # Always supplement with state results to handle bad OSM coords
+        if user_state:
+            state_norm = _normalise_state(user_state)
+            state_results = [
+                f for f in facilities
+                if _normalise_state(f.get("state", "")) == state_norm
+            ]
+            # Merge without duplicates
+            seen_ids = {f.get("id") for f in candidates}
+            for f in state_results:
+                if f.get("id") not in seen_ids:
+                    candidates.append(f)
+
+    # LGA filter — more precise than state alone
+    elif user_lga and user_state:
+        state_norm = _normalise_state(user_state)
+        lga_norm   = user_lga.strip().lower()
+
+        lga_results = [
+            f for f in facilities
+            if _normalise_state(f.get("state", "")) == state_norm
+            and f.get("lga", "").strip().lower() == lga_norm
+        ]
+
+        # If LGA returns enough, use it; otherwise expand to state
+        if len(lga_results) >= 3:
+            candidates = lga_results
+        else:
+            candidates = [
+                f for f in facilities
+                if _normalise_state(f.get("state", "")) == state_norm
+            ]
+
+    # State only
+    elif user_state:
+        state_norm = _normalise_state(user_state)
+        candidates = [
+            f for f in facilities
+            if _normalise_state(f.get("state", "")) == state_norm
+        ]
+
+    # Hard fallback — no location at all
     if not candidates:
-        candidates = _ALL_FACILITIES
+        candidates = facilities
 
-    # Step 2: Build responses with robust address key fallbacks
-    recommended = []
-    for f in candidates:
-        distance = None
-        f_lat = f.get("latitude")
-        f_lon = f.get("longitude")
-        
-        if has_gps and f_lat is not None and f_lon is not None:
-            distance = _calculate_haversine(lat, lon, float(f_lat), float(f_lon))
+    # ── Step 2: Triage filter ─────────────────────────────────
+    candidates = _filter_by_triage(candidates, triage_level)
 
-        # Robust fallback matching check for common JSON address field conventions
-        exact_address = f.get("address") or f.get("facility_address") or f.get("formatted_address") or f.get("street")
-        if not exact_address or exact_address.strip() == "":
-            exact_address = f"Located in {f.get('lga', 'Central Region')}, {str(f.get('state')).title()} State."
+    if not candidates:
+        candidates = facilities  # never return empty
 
-        item = {
-            "id": str(f.get("id")),
-            "name": str(f.get("name")),
-            "type": str(f.get("type", "primary")).lower(),
-            "state": str(f.get("state")),
-            "lga": f.get("lga") if f.get("lga") else "Central Region",
-            "address": exact_address,
-            "phone": f.get("phone") or f.get("contact_phone") or "No contact number listed",
-            "latitude": float(f_lat) if f_lat else 0.0,
-            "longitude": float(f_lon) if f_lon else 0.0,
-            "services": f.get("services", ["basic_newborn_care"]),
-            "osm_id": int(f.get("osm_id", 0)),
-            "data_quality_verified": bool(f.get("data_quality_verified", False)),
-            "distance_km": round(distance, 1) if distance is not None else None
-        }
-        recommended.append(item)
+    # ── Step 3: Preference sort ───────────────────────────────
+    sorted_facilities = _sort_by_preference(
+        candidates,
+        preference=facility_preference,
+        user_lat=user_lat,
+        user_lon=user_lon,
+        triage_level=triage_level,
+    )
 
-    # Step 3: Sort dynamically
-    if has_gps:
-        recommended.sort(key=lambda x: (
-            _get_tier_priority(x["type"], triage_level),
-            x["distance_km"] if x["distance_km"] is not None else 99999.0
-        ))
-    else:
-        recommended.sort(key=lambda x: (
-            _get_tier_priority(x["type"], triage_level),
-            x["name"]
-        ))
+    return sorted_facilities[:max_results]
 
-    return recommended[:max_results]
+
+def _normalise_state(state: str) -> str:
+    """Normalise state name for comparison."""
+    if not state:
+        return ""
+    # Remove ' state' suffix, underscores, lowercase
+    return (
+        state.lower()
+        .replace("_state", "")
+        .replace(" state", "")
+        .replace("_", " ")
+        .strip()
+    )
