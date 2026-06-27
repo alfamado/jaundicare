@@ -11,7 +11,8 @@ import axios from "axios";
 // e.g. "http://192.168.1.100:8000"
 // For Android emulator: "http://10.0.2.2:8000"
 // For iOS simulator:    "http://127.0.0.1:8000"
-export const API_BASE_URL = "http://10.41.25.92:8000"; // ← change this to your local IP or deployed URL when ready
+// export const API_BASE_URL = "http://10.41.25.92:8000"; // ← change this to your local IP or deployed URL when ready
+export const API_BASE_URL = "https://jaundicare-api.onrender.com";
 
 const api = axios.create({
   baseURL: API_BASE_URL,

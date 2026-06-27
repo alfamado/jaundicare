@@ -6,7 +6,8 @@
    shareable screening summary, mobile nav + result sheet
    ============================================================ */
 
-const API_BASE    = "http://127.0.0.1:8000";
+// const API_BASE    = "http://127.0.0.1:8000";
+const API_BASE = "https://jaundicare-api.onrender.com";
 const API_URL     = `${API_BASE}/screening/analyze`;
 const PROFILE_URL = `${API_BASE}/profile/baby`;
 const HISTORY_URL = `${API_BASE}/screening/history`;

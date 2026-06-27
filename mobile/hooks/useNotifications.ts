@@ -4,11 +4,87 @@
  * Native push — far more reliable than browser Notification API.
  */
 
+// import { useCallback } from "react";
+// import * as Notifications from "expo-notifications";
+// import type { BabyProfile } from "../services/api";
+
+// // Configure how notifications appear when app is in foreground
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge:  false,
+//   }),
+// });
+
+// const REMINDERS = [
+//   { dayOffset: 1,  title: "JaundiCare — Day 1 check",   body: "Look at your baby's eyes, gums, and soles for yellowing." },
+//   { dayOffset: 2,  title: "JaundiCare — Day 2-3 check", body: "Check eyes, gums, palms and soles. Watch feeding closely." },
+//   { dayOffset: 7,  title: "JaundiCare — Day 7 follow-up",body: "Review feeding, weight and any persistent yellowing." },
+//   { dayOffset: 14, title: "JaundiCare — Day 14 check",  body: "If jaundice is still present or worsening, seek medical advice today." },
+// ];
+
+// export function useNotifications() {
+
+//   const requestPermission = useCallback(async (): Promise<boolean> => {
+//     const { status: existing } = await Notifications.getPermissionsAsync();
+//     if (existing === "granted") return true;
+
+//     const { status } = await Notifications.requestPermissionsAsync();
+//     return status === "granted";
+//   }, []);
+
+//   const scheduleFollowUpReminders = useCallback(async (profile: BabyProfile) => {
+//     if (!profile.date_of_birth || !profile.time_of_birth) return;
+
+//     const granted = await requestPermission();
+//     if (!granted) return;
+
+//     // Cancel any existing JaundiCare reminders first
+//     await Notifications.cancelAllScheduledNotificationsAsync();
+
+//     const birthDt = new Date(`${profile.date_of_birth}T${profile.time_of_birth}`);
+//     const now     = Date.now();
+
+//     for (const reminder of REMINDERS) {
+//       const dueTime = birthDt.getTime() + reminder.dayOffset * 24 * 60 * 60 * 1000;
+//       const delay   = dueTime - now;
+
+//       // Only schedule future reminders
+//       if (delay > 0) {
+//         await Notifications.scheduleNotificationAsync({
+//           content: {
+//             title: reminder.title,
+//             body:  reminder.body,
+//             sound: true,
+//             data:  { dayOffset: reminder.dayOffset },
+//           },
+//           trigger: { seconds: Math.floor(delay / 1000) },
+//         });
+//       }
+//     }
+//   }, [requestPermission]);
+
+//   const cancelAllReminders = useCallback(async () => {
+//     await Notifications.cancelAllScheduledNotificationsAsync();
+//   }, []);
+
+//   return { requestPermission, scheduleFollowUpReminders, cancelAllReminders };
+// }
+
+
+/**
+ * JaundiCare — useNotifications hook
+ * Schedules postnatal follow-up reminders using Expo notifications.
+ * Fixed for Android 13+ runtime permission requirement.
+ */
+
 import { useCallback } from "react";
 import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import { Platform } from "react-native";
 import type { BabyProfile } from "../services/api";
 
-// Configure how notifications appear when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -18,15 +94,27 @@ Notifications.setNotificationHandler({
 });
 
 const REMINDERS = [
-  { dayOffset: 1,  title: "JaundiCare — Day 1 check",   body: "Look at your baby's eyes, gums, and soles for yellowing." },
-  { dayOffset: 2,  title: "JaundiCare — Day 2-3 check", body: "Check eyes, gums, palms and soles. Watch feeding closely." },
+  { dayOffset: 1,  title: "JaundiCare — Day 1 check",    body: "Look at your baby's eyes, gums, and soles for yellowing." },
+  { dayOffset: 2,  title: "JaundiCare — Day 2-3 check",  body: "Check eyes, gums, palms and soles. Watch feeding closely." },
   { dayOffset: 7,  title: "JaundiCare — Day 7 follow-up",body: "Review feeding, weight and any persistent yellowing." },
-  { dayOffset: 14, title: "JaundiCare — Day 14 check",  body: "If jaundice is still present or worsening, seek medical advice today." },
+  { dayOffset: 14, title: "JaundiCare — Day 14 check",   body: "If jaundice is still present or worsening, seek medical advice today." },
 ];
 
 export function useNotifications() {
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
+    // Notifications only work on real devices, not simulators
+    if (!Device.isDevice) {
+      console.log("Notifications not available on simulator");
+      return false;
+    }
+
+    // Android 13+ requires explicit runtime permission
+    if (Platform.OS === "android" && Platform.Version >= 33) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      return status === "granted";
+    }
+
     const { status: existing } = await Notifications.getPermissionsAsync();
     if (existing === "granted") return true;
 
@@ -38,19 +126,22 @@ export function useNotifications() {
     if (!profile.date_of_birth || !profile.time_of_birth) return;
 
     const granted = await requestPermission();
-    if (!granted) return;
+    if (!granted) {
+      console.log("Notification permission denied");
+      return;
+    }
 
-    // Cancel any existing JaundiCare reminders first
+    // Cancel any existing reminders first
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const birthDt = new Date(`${profile.date_of_birth}T${profile.time_of_birth}`);
     const now     = Date.now();
+    let scheduled = 0;
 
     for (const reminder of REMINDERS) {
       const dueTime = birthDt.getTime() + reminder.dayOffset * 24 * 60 * 60 * 1000;
       const delay   = dueTime - now;
 
-      // Only schedule future reminders
       if (delay > 0) {
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -59,10 +150,16 @@ export function useNotifications() {
             sound: true,
             data:  { dayOffset: reminder.dayOffset },
           },
-          trigger: { seconds: Math.floor(delay / 1000) },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: Math.floor(delay / 1000),
+          },
         });
+        scheduled++;
       }
     }
+
+    console.log(`Scheduled ${scheduled} follow-up reminders`);
   }, [requestPermission]);
 
   const cancelAllReminders = useCallback(async () => {
