@@ -53,28 +53,62 @@
 
 
 
+# from pathlib import Path
+
+# BASE_DIR = Path(__file__).resolve().parent.parent
+# UPLOAD_DIR = BASE_DIR / "uploads"
+# WEIGHTS_DIR = BASE_DIR / "weights"
+# DATA_STORE_DIR = BASE_DIR / "data_store"
+
+# MODEL_PATH = WEIGHTS_DIR / "jaundice_mobilenetv2.pth"
+# CLASS_MAP_PATH = WEIGHTS_DIR / "class_to_idx.json"
+
+# BABY_PROFILE_PATH = DATA_STORE_DIR / "baby_profile.json"
+# SCREENINGS_PATH = DATA_STORE_DIR / "screenings.json"
+
+# UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
+# DATA_STORE_DIR.mkdir(parents=True, exist_ok=True)
+
+# IMG_SIZE = 224
+
+# UNCERTAIN_THRESHOLD = 0.55
+# STRONG_CONFIDENCE_THRESHOLD = 0.70
+# MODEL_CONFIDENCE_THRESHOLD = 0.60
+# NORMAL_REASSURANCE_THRESHOLD = 0.65
+# MODEL_JAUNDICE_THRESHOLD = 0.45
+# MODEL_UNCERTAIN_MARGIN = 0.10
+
+
+
+
+
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = BASE_DIR / "uploads"
-WEIGHTS_DIR = BASE_DIR / "weights"
+BASE_DIR       = Path(__file__).resolve().parent.parent
+UPLOAD_DIR     = BASE_DIR / "uploads"
+WEIGHTS_DIR    = BASE_DIR / "weights"
 DATA_STORE_DIR = BASE_DIR / "data_store"
-
-MODEL_PATH = WEIGHTS_DIR / "jaundice_mobilenetv2.pth"
+MODEL_PATH     = WEIGHTS_DIR / "jaundice_mobilenetv2.pth"
 CLASS_MAP_PATH = WEIGHTS_DIR / "class_to_idx.json"
 
+# Facility data — supports both naming conventions
+_prod_path = DATA_STORE_DIR / "production_facilities.json"
+_dev_path  = DATA_STORE_DIR / "facilities.json"
+FACILITIES_PATH = _prod_path if _prod_path.exists() else _dev_path
+
+# Legacy paths kept for backwards compatibility
 BABY_PROFILE_PATH = DATA_STORE_DIR / "baby_profile.json"
-SCREENINGS_PATH = DATA_STORE_DIR / "screenings.json"
+SCREENINGS_PATH   = DATA_STORE_DIR / "screenings.json"
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
 DATA_STORE_DIR.mkdir(parents=True, exist_ok=True)
 
-IMG_SIZE = 224
-
-UNCERTAIN_THRESHOLD = 0.55
+IMG_SIZE                    = 224
+UNCERTAIN_THRESHOLD         = 0.55
 STRONG_CONFIDENCE_THRESHOLD = 0.70
-MODEL_CONFIDENCE_THRESHOLD = 0.60
-NORMAL_REASSURANCE_THRESHOLD = 0.65
-MODEL_JAUNDICE_THRESHOLD = 0.45
-MODEL_UNCERTAIN_MARGIN = 0.10
+MODEL_CONFIDENCE_THRESHOLD  = 0.60
+NORMAL_REASSURANCE_THRESHOLD= 0.65
+MODEL_JAUNDICE_THRESHOLD    = 0.45
+MODEL_UNCERTAIN_MARGIN      = 0.10
