@@ -74,7 +74,10 @@
             }
           }
         }
-      ]
+      ],
+      "expo-audio",
+      "onnxruntime-react-native",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

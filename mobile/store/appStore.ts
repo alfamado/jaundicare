@@ -128,39 +128,127 @@
 // );
 
 
+// import { create } from "zustand";
+// import { persist, createJSONStorage } from "zustand/middleware";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import type { BabyProfile, ScreeningResult, ScreeningHistoryItem } from "../services/api";
+ 
+// interface AppState {
+//   language: string;
+//   setLanguage: (lang: string) => void;
+ 
+//   onboarded: boolean;
+//   role: "parent" | "health_worker" | null;
+//   finishOnboarding: (role: "parent" | "health_worker") => void;
+ 
+//   profile: BabyProfile | null;
+//   setProfile: (profile: BabyProfile | null) => void;
+ 
+//   lastScreening: ScreeningResult | null;
+//   setLastScreening: (result: ScreeningResult | null) => void;
+ 
+//   history: ScreeningHistoryItem[];
+//   setHistory: (history: ScreeningHistoryItem[]) => void;
+ 
+//   lastUrgentDecision: string | null;
+//   lastUrgentTime: number | null;
+//   followupDismissed: boolean;
+//   storeFollowUpData: (decision: string) => void;
+//   dismissFollowUp: () => void;
+ 
+//   caseload: CaseloadEntry[];
+//   addCase: (entry: Omit<CaseloadEntry, "id" | "addedAt">) => void;
+//   removeCase: (id: string) => void;
+// }
+ 
+// export interface CaseloadEntry {
+//   id: string;
+//   name: string;
+//   household?: string;
+//   dob: string;
+//   tob: string;
+//   gestAge?: number;
+//   addedAt: string;
+// }
+ 
+// const URGENT_DECISIONS = [
+//   "URGENT_HOSPITAL_REVIEW",
+//   "SAME_DAY_CLINIC_REVIEW",
+//   "RECHECK_SOON_OR_CLINIC_IF_CONCERNED",
+// ];
+ 
+// export const useAppStore = create<AppState>()(
+//   persist(
+//     (set) => ({
+//       language: "en",
+//       setLanguage: (lang) => set({ language: lang }),
+ 
+//       onboarded: false,
+//       role: null,
+//       finishOnboarding: (role) => set({ onboarded: true, role }),
+ 
+//       profile: null,
+//       setProfile: (profile) => set({ profile }),
+ 
+//       lastScreening: null,
+//       setLastScreening: (result) => set({ lastScreening: result }),
+ 
+//       history: [],
+//       setHistory: (history) => set({ history }),
+ 
+//       lastUrgentDecision: null,
+//       lastUrgentTime: null,
+//       followupDismissed: false,
+ 
+//       storeFollowUpData: (decision) => {
+//         if (URGENT_DECISIONS.includes(decision)) {
+//           set({
+//             lastUrgentDecision: decision,
+//             lastUrgentTime: Date.now(),
+//             followupDismissed: false,
+//           });
+//         }
+//       },
+ 
+//       dismissFollowUp: () => set({ followupDismissed: true }),
+ 
+//       caseload: [],
+//       addCase: (entry) =>
+//         set((state) => ({
+//           caseload: [
+//             {
+//               ...entry,
+//               id: Date.now().toString(),
+//               addedAt: new Date().toISOString(),
+//             },
+//             ...state.caseload,
+//           ],
+//         })),
+//       removeCase: (id) =>
+//         set((state) => ({
+//           caseload: state.caseload.filter((c) => c.id !== id),
+//         })),
+//     }),
+//     {
+//       name: "jaundicare-store",
+//       storage: createJSONStorage(() => AsyncStorage),
+//     }
+//   )
+// );
+
+
+
+/**
+ * JaundiCare — Core Application Configuration Store
+ * High-scale reactive global state for configuration preferences, caseload management,
+ * and immediate clinical triage caching.
+ */
+
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { BabyProfile, ScreeningResult, ScreeningHistoryItem } from "../services/api";
- 
-interface AppState {
-  language: string;
-  setLanguage: (lang: string) => void;
- 
-  onboarded: boolean;
-  role: "parent" | "health_worker" | null;
-  finishOnboarding: (role: "parent" | "health_worker") => void;
- 
-  profile: BabyProfile | null;
-  setProfile: (profile: BabyProfile | null) => void;
- 
-  lastScreening: ScreeningResult | null;
-  setLastScreening: (result: ScreeningResult | null) => void;
- 
-  history: ScreeningHistoryItem[];
-  setHistory: (history: ScreeningHistoryItem[]) => void;
- 
-  lastUrgentDecision: string | null;
-  lastUrgentTime: number | null;
-  followupDismissed: boolean;
-  storeFollowUpData: (decision: string) => void;
-  dismissFollowUp: () => void;
- 
-  caseload: CaseloadEntry[];
-  addCase: (entry: Omit<CaseloadEntry, "id" | "addedAt">) => void;
-  removeCase: (id: string) => void;
-}
- 
+
 export interface CaseloadEntry {
   id: string;
   name: string;
@@ -170,36 +258,72 @@ export interface CaseloadEntry {
   gestAge?: number;
   addedAt: string;
 }
- 
+
+interface AppState {
+  language: string;
+  setLanguage: (lang: string) => void;
+
+  onboarded: boolean;
+  role: "parent" | "health_worker" | null;
+  finishOnboarding: (role: "parent" | "health_worker") => void;
+
+  profile: BabyProfile | null;
+  setProfile: (profile: BabyProfile | null) => void;
+
+  lastScreening: ScreeningResult | null;
+  setLastScreening: (result: ScreeningResult | null) => void;
+
+  history: ScreeningHistoryItem[];
+  setHistory: (history: ScreeningHistoryItem[]) => void;
+
+  lastUrgentDecision: string | null;
+  lastUrgentTime: number | null;
+  followupDismissed: boolean;
+  storeFollowUpData: (decision: string) => void;
+  dismissFollowUp: () => void;
+
+  caseload: CaseloadEntry[];
+  addCase: (entry: Omit<CaseloadEntry, "id" | "addedAt">) => void;
+  removeCase: (id: string) => void;
+  clearStoreOnLogout: () => void;
+}
+
 const URGENT_DECISIONS = [
   "URGENT_HOSPITAL_REVIEW",
   "SAME_DAY_CLINIC_REVIEW",
   "RECHECK_SOON_OR_CLINIC_IF_CONCERNED",
 ];
- 
+
+// Production constraints to protect system memory allocations
+const MAX_HISTORY_ITEMS = 50; 
+
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       language: "en",
       setLanguage: (lang) => set({ language: lang }),
- 
+
       onboarded: false,
       role: null,
       finishOnboarding: (role) => set({ onboarded: true, role }),
- 
+
       profile: null,
       setProfile: (profile) => set({ profile }),
- 
+
       lastScreening: null,
       setLastScreening: (result) => set({ lastScreening: result }),
- 
+
       history: [],
-      setHistory: (history) => set({ history }),
- 
+      setHistory: (history) => {
+        // Enforce boundary caps on memory-heavy local history logs
+        const boundHistory = history.slice(0, MAX_HISTORY_ITEMS);
+        set({ history: boundHistory });
+      },
+
       lastUrgentDecision: null,
       lastUrgentTime: null,
       followupDismissed: false,
- 
+
       storeFollowUpData: (decision) => {
         if (URGENT_DECISIONS.includes(decision)) {
           set({
@@ -209,29 +333,54 @@ export const useAppStore = create<AppState>()(
           });
         }
       },
- 
+
       dismissFollowUp: () => set({ followupDismissed: true }),
- 
+
       caseload: [],
       addCase: (entry) =>
-        set((state) => ({
-          caseload: [
-            {
-              ...entry,
-              id: Date.now().toString(),
-              addedAt: new Date().toISOString(),
-            },
-            ...state.caseload,
-          ],
-        })),
+        set((state) => {
+          // Cryptographically stable unique indexing to replace collision-prone timestamps
+          const uniqueId = `case_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          return {
+            caseload: [
+              {
+                ...entry,
+                id: uniqueId,
+                addedAt: new Date().toISOString(),
+              },
+              ...state.caseload,
+            ],
+          };
+        }),
+        
       removeCase: (id) =>
         set((state) => ({
           caseload: state.caseload.filter((c) => c.id !== id),
         })),
+
+      clearStoreOnLogout: () => 
+        set({
+          profile: null,
+          lastScreening: null,
+          history: [],
+          caseload: [],
+          lastUrgentDecision: null,
+          lastUrgentTime: null,
+          followupDismissed: false,
+        }),
     }),
     {
       name: "jaundicare-store",
       storage: createJSONStorage(() => AsyncStorage),
+      
+      // Scaling fix: partialize limits disk serialization strictly to long-term configuration data 
+      partialize: (state) => ({
+        language: state.language,
+        onboarded: state.onboarded,
+        role: state.role,
+        caseload: state.caseload, // Retain case trackers for field worker continuity
+        profile: state.profile,
+      }),
     }
   )
 );

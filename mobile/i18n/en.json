@@ -81,6 +81,7 @@
   "status.urgent": "Urgent review",
   "status.same_day": "Same-day check",
   "status.monitor": "Monitor closely",
+  "status.pending": "Pending Sync",
   "history.title": "Screening history",
   "history.text": "Review previous screening results and see how decisions changed over time.",
   "history.empty": "No screening history yet.",
@@ -212,4 +213,49 @@
   "weak_normal_reason": "The image result is not strong enough to fully reassure. Please monitor closely and seek advice if symptoms appear.",
   "nav.nomogram": "Bili Nomogram",
   "nav.analytics": "Analytics"
+  ,
+  "trust": {
+    "title": "This is a screening support tool.",
+    "body": "It does not replace a doctor, midwife, or bilirubin test."
+  },
+  "result": {
+    "title": "Screening Result",
+    "what_next": "What to do next",
+    "facilities": "Nearby facilities",
+    "notes": "Additional notes",
+    "share_btn": "Share screening summary",
+    "final_decision": "Final Decision"
+  },
+  "hw_labels": {
+    "image_prediction": "Image Prediction",
+    "confidence": "Confidence",
+    "confidence_band": "Confidence Band",
+    "baby_age": "Baby Age",
+    "raw_triage_level": "Raw Triage Level",
+    "raw_triage_reason": "Raw Triage Reason",
+    "decision_reason": "Decision Reason",
+    "hours": "hours"
+  },
+  "next": {
+    "urgent": {
+      "1": "Go to the nearest hospital now — do not wait.",
+      "2": "Call ahead if possible so they can prepare.",
+      "3": "Take this screening result with you to show the doctor."
+    },
+    "same_day": {
+      "1": "Visit a clinic or health worker today.",
+      "2": "Do not wait until tomorrow.",
+      "3": "Continue feeding your baby regularly while travelling."
+    },
+    "recheck": {
+      "1": "Recheck your baby in a few hours.",
+      "2": "Watch for yellowing in the eyes, gums, palms, or soles.",
+      "3": "Seek same-day care if anything worsens."
+    },
+    "monitor": {
+      "1": "Continue feeding your baby regularly — 8 to 12 times per day.",
+      "2": "Check eyes, gums, and palms daily for yellowing.",
+      "3": "Run a new screening if any warning signs appear."
+    }
+  }
 }
