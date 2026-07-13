@@ -84,8 +84,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 TERMII_API_KEY = os.getenv("TERMII_API_KEY", "")
-TERMII_BASE_URL = "https://v4.api.termii.com/"
-# TERMII_BASE_URL = "https://api.ng.termii.com/api"
+# TERMII_BASE_URL = "https://v4.api.termii.com/"
+TERMII_BASE_URL = "https://api.ng.termii.com/api"
 # Default to registered Sender ID, fallback to sandbox CHANNELS if not configured
 SENDER_ID = os.getenv("TERMII_SENDER_ID", "JaundiCare")
 TIMEOUT = 15.0
