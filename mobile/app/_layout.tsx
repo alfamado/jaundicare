@@ -445,14 +445,14 @@ import NetInfo from "@react-native-community/netinfo";
 import { useAppStore } from "../store/appStore";
 import { Providers } from "../components/Providers";
 import { Colors } from "../constants/colors";
-import { syncOfflineStore } from "../services/offlineStore";
-import { useAuthStore } from "../hooks/useAuthStore";
+import { syncOfflineStore } from "../services/offlineStoreSecure";
+import { useAuth } from "../hooks/useAuth";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const onboarded = useAppStore((s) => s.onboarded); // Zustand store uses a selector function
-  const token = useAuthStore(); // Pull safely from dedicated auth store
+  const { isAuthenticated, isHydrated, refreshSessionInBackground } = useAuth();
 
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
@@ -463,7 +463,7 @@ export default function RootLayout() {
 
   // Secure dynamic navigation routing effect
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && isHydrated) {
       SplashScreen.hideAsync();
       
       // Native Android status bar theme synchronization
@@ -474,10 +474,10 @@ export default function RootLayout() {
       
       // Enqueue routing evaluation to the next macro-task tick to guarantee Expo Router is fully mounted
       const timer = setTimeout(() => {
-        if (!onboarded) {
-          router.replace("/onboarding");
-        } else if (!token) {
+        if (!isAuthenticated) {
           router.replace("/auth/phone");
+        } else if (!onboarded) {
+          router.replace("/onboarding");
         } else {
           // User is onboarded and authenticated, push safely to dashboard destination
           router.replace("/(tabs)");
@@ -486,16 +486,27 @@ export default function RootLayout() {
       
       return () => clearTimeout(timer);
     }
-  }, [fontsLoaded, onboarded, token]);
+  }, [fontsLoaded, isAuthenticated, isHydrated, onboarded]);
 
   // Protected network mutation synchronization engine
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     let isInitialMount = true;
 
     const unsubscribe = NetInfo.addEventListener((state) => {
       // Intercept the initial listener snapshot fire to save processing power on boot
       if (isInitialMount) {
         isInitialMount = false;
+        if (state.isConnected && state.isInternetReachable === true) {
+          refreshSessionInBackground().then((refreshed) => {
+            if (refreshed) {
+              return syncOfflineStore();
+            }
+          }).catch((error) => {
+            console.error("Initial session refresh failed:", error);
+          });
+        }
         return;
       }
 
@@ -508,9 +519,9 @@ export default function RootLayout() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !isHydrated) return null;
 
   return (
     <Providers>

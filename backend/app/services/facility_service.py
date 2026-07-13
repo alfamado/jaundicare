@@ -2972,6 +2972,7 @@ and urgent case override.
 
 import json
 import math
+from collections import defaultdict
 from app.config import FACILITIES_PATH
 
 FACILITY_PATH = FACILITIES_PATH
@@ -3013,15 +3014,28 @@ PRIVATE_KEYWORDS = [
 ]
 
 _facilities_cache = None
+_facilities_by_state = {}
+_facilities_by_state_lga = {}
 
 
 def load_facilities():
-    global _facilities_cache
+    global _facilities_cache, _facilities_by_state, _facilities_by_state_lga
     if _facilities_cache is not None:
         return _facilities_cache
     try:
         with open(FACILITY_PATH, "r", encoding="utf-8") as f:
             _facilities_cache = json.load(f)
+            by_state = defaultdict(list)
+            by_state_lga = defaultdict(list)
+            for facility in _facilities_cache:
+                state_key = _normalise_state(facility.get("state", ""))
+                lga_key = (facility.get("lga") or "").strip().lower()
+                if state_key:
+                    by_state[state_key].append(facility)
+                    if lga_key:
+                        by_state_lga[(state_key, lga_key)].append(facility)
+            _facilities_by_state = dict(by_state)
+            _facilities_by_state_lga = dict(by_state_lga)
             print(f"🌍 [FacilityService] Loaded {len(_facilities_cache)} facilities successfully.")
             return _facilities_cache
     except Exception as e:
@@ -3225,13 +3239,27 @@ def get_recommended_facilities(
 
     # GPS radius search — most accurate
     if user_lat and user_lon:
+        distance_pairs = [
+            (
+                facility,
+                haversine_distance_km(
+                    user_lat,
+                    user_lon,
+                    facility["latitude"],
+                    facility["longitude"],
+                ),
+            )
+            for facility in facilities
+            if _is_valid_nigeria_coord(
+                facility.get("latitude"),
+                facility.get("longitude"),
+            )
+        ]
         for radius in (25, 50, 100, 200):
             in_radius = [
-                f for f in facilities
-                if _is_valid_nigeria_coord(f.get("latitude"), f.get("longitude"))
-                and haversine_distance_km(
-                    user_lat, user_lon, f["latitude"], f["longitude"]
-                ) <= radius
+                facility
+                for facility, distance in distance_pairs
+                if distance <= radius
             ]
             if len(in_radius) >= 3:
                 candidates = in_radius
@@ -3240,10 +3268,7 @@ def get_recommended_facilities(
         # Always supplement with state results to handle bad OSM coords
         if user_state:
             state_norm = _normalise_state(user_state)
-            state_results = [
-                f for f in facilities
-                if _normalise_state(f.get("state", "")) == state_norm
-            ]
+            state_results = _facilities_by_state.get(state_norm, [])
             # Merge without duplicates
             seen_ids = {f.get("id") for f in candidates}
             for f in state_results:
@@ -3255,28 +3280,18 @@ def get_recommended_facilities(
         state_norm = _normalise_state(user_state)
         lga_norm   = user_lga.strip().lower()
 
-        lga_results = [
-            f for f in facilities
-            if _normalise_state(f.get("state", "")) == state_norm
-            and f.get("lga", "").strip().lower() == lga_norm
-        ]
+        lga_results = _facilities_by_state_lga.get((state_norm, lga_norm), [])
 
         # If LGA returns enough, use it; otherwise expand to state
         if len(lga_results) >= 3:
             candidates = lga_results
         else:
-            candidates = [
-                f for f in facilities
-                if _normalise_state(f.get("state", "")) == state_norm
-            ]
+            candidates = _facilities_by_state.get(state_norm, [])
 
     # State only
     elif user_state:
         state_norm = _normalise_state(user_state)
-        candidates = [
-            f for f in facilities
-            if _normalise_state(f.get("state", "")) == state_norm
-        ]
+        candidates = _facilities_by_state.get(state_norm, [])
 
     # Hard fallback — no location at all
     if not candidates:

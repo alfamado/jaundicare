@@ -360,6 +360,8 @@ import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_BASE_URL } from "../services/api";
 import { useAuthStore } from "./useAuthStore";
+import { clearOfflineStore } from "../services/offlineStoreSecure";
+import { useAppStore } from "../store/appStore";
 
 // Master secure hardware store keys mapping
 const STORAGE_KEYS = {
@@ -383,6 +385,7 @@ export const useAuth = () => {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const clearAuthenticated = useAuthStore((state) => state.clearAuthenticated);
   const setHydrated = useAuthStore((state) => state.setHydrated);
+  const clearAppData = useAppStore((state) => state.clearStoreOnLogout);
 
   // Bind to reactive UI read state variables if needed locally
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -458,7 +461,22 @@ export const useAuth = () => {
    * Flushes local key bindings completely across both hardware disk and memory layers.
    */
   const logout = async () => {
+    const activeUserId = await SecureStore.getItemAsync(STORAGE_KEYS.userId);
+    const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.refreshToken);
     try {
+      if (refreshToken) {
+        await axios.post(
+          `${API_BASE_URL}/auth/logout`,
+          { refresh_token: refreshToken },
+          { headers: { "Content-Type": "application/json" }, timeout: 10000 },
+        );
+      }
+    } catch {
+      // Local logout must still complete when the device is offline.
+    }
+
+    try {
+      await clearOfflineStore(activeUserId);
       // 1. Wipe local hardware keys simultaneously
       await Promise.all([
         SecureStore.deleteItemAsync(STORAGE_KEYS.accessToken),
@@ -471,6 +489,7 @@ export const useAuth = () => {
       console.error("Non-fatal error cleaning storage keys during clearSession:", error);
     } finally {
       // 2. Always guarantee state mutation out of authenticated UI contexts
+      clearAppData();
       clearAuthenticated();
     }
   };

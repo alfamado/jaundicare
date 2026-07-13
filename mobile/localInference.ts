@@ -183,6 +183,43 @@ import * as ort from "onnxruntime-react-native";
 import { GLView } from "expo-gl";
 
 /**
+ * Keep this in sync with backend/weights/class_to_idx.json.
+ * The server and the mobile model are exported from the same .pth checkpoint.
+ */
+export const LOCAL_MODEL_CLASS_INDEX = {
+  jaundice: 0,
+  normal: 1,
+} as const;
+
+function normaliseModelOutput(values: number[]): number[] | null {
+  if (
+    values.length !== 2 ||
+    values.some((value) => !Number.isFinite(value))
+  ) {
+    return null;
+  }
+
+  // convert_to_onnx.py exports a Softmax node and names this output
+  // "probabilities". Do not apply Softmax a second time: doing so flattens the
+  // model confidence and changes clinical escalation behaviour.
+  const total = values[0] + values[1];
+  if (
+    values.every((value) => value >= 0 && value <= 1) &&
+    Math.abs(total - 1) <= 0.001
+  ) {
+    return values;
+  }
+
+  // This supports an older, logits-only model during a controlled rollout.
+  const maximum = Math.max(...values);
+  const exponentials = values.map((value) => Math.exp(value - maximum));
+  const exponentialsTotal = exponentials[0] + exponentials[1];
+  return exponentialsTotal > 0
+    ? exponentials.map((value) => value / exponentialsTotal)
+    : null;
+}
+
+/**
  * Decodes an image URI into a normalized flat Float32Array [1, 3, 224, 224] using WebGL hardware context.
  */
 async function preprocessImageUriToTensor(uri: string): Promise<Float32Array> {
@@ -269,13 +306,11 @@ export async function runLocalInferenceWithUri(imageUri: string): Promise<number
     const outputKey = session.outputNames[0]; 
     const outputTensor = outputs[outputKey];
 
-    const rawLogits = Array.from(outputTensor.data as Float32Array);
-    
-    // Fix 2: Calculate stable Softmax transformation to ensure bounded, safe probabilities
-    const maxLogit = Math.max(...rawLogits); // Max subtraction for numerical stability
-    const exps = rawLogits.map((logit) => Math.exp(logit - maxLogit));
-    const sumExps = exps.reduce((a, b) => a + b, 0);
-    const predictionProbabilities = exps.map((exp) => exp / sumExps);
+    const rawOutput = Array.from(outputTensor.data as Float32Array);
+    const predictionProbabilities = normaliseModelOutput(rawOutput);
+    if (!predictionProbabilities) {
+      throw new Error("The local model returned an invalid prediction vector.");
+    }
     
     console.log("[LocalML] Matrix inference complete. Probability Vector:", predictionProbabilities);
     return predictionProbabilities;

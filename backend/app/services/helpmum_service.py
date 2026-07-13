@@ -94,8 +94,9 @@ MAMABOT_API_KEY = os.getenv("HELPMUM_MAMABOT_API_KEY")
 VAXAI_API_KEY   = os.getenv("HELPMUM_VAXAI_API_KEY")
 
 # Optional but highly recommended: Guardrail check
-if not MAMABOT_API_KEY or not VAXAI_API_KEY:
-    raise RuntimeError("CRITICAL: HelpMum API credentials missing from environment configurations!")
+def helpmum_is_configured() -> bool:
+    """Keep optional consultation outages from preventing the API from starting."""
+    return bool(MAMABOT_API_KEY and VAXAI_API_KEY)
 
 TIMEOUT = 30.0  # seconds — generous for LLM inference
 

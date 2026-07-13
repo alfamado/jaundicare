@@ -350,13 +350,50 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
-export const API_BASE_URL = "https://jaundicare-api.onrender.com";
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://jaundicare-api.onrender.com";
 
 // Master secure storage keys mapping directly to useAuth.ts architecture
 const STORAGE_KEYS = {
   accessToken:  "jaundicare_access_token",
   refreshToken: "jaundicare_refresh_token",
 };
+
+interface RefreshedTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+let refreshPromise: Promise<RefreshedTokens> | null = null;
+
+async function refreshTokensOnce(): Promise<RefreshedTokens> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const currentRefreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.refreshToken);
+      if (!currentRefreshToken) {
+        throw new Error("No refresh token is available.");
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refresh_token: currentRefreshToken },
+        { headers: { "Content-Type": "application/json" }, timeout: 15000 },
+      );
+      const tokens = {
+        accessToken: response.data.access_token as string,
+        refreshToken: response.data.refresh_token as string,
+      };
+      await Promise.all([
+        SecureStore.setItemAsync(STORAGE_KEYS.accessToken, tokens.accessToken),
+        SecureStore.setItemAsync(STORAGE_KEYS.refreshToken, tokens.refreshToken),
+      ]);
+      return tokens;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -390,40 +427,19 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Guard condition: Intercept strictly on 401 responses and ensure we don't loop infinitely
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const currentRefreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.refreshToken);
-
-        if (currentRefreshToken) {
-          // Execute standalone HTTP post to bypass instance interceptors during token generation
-          const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: currentRefreshToken,
-          }, {
-            headers: { "Content-Type": "application/json" }
-          });
-
-          if (refreshResponse.status === 200 && refreshResponse.data) {
-            const { access_token, refresh_token } = refreshResponse.data;
-
-            // Commit fresh structural credentials back to the master hardware store
-            await Promise.all([
-              SecureStore.setItemAsync(STORAGE_KEYS.accessToken, access_token),
-              SecureStore.setItemAsync(STORAGE_KEYS.refreshToken, refresh_token),
-            ]);
-
-            // Re-assign the new working token authorization header to the original stalled request
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-
-            // Replay the original request with the fresh token transparently
-            return api(originalRequest);
-          }
-        }
-      } catch (refreshError) {
-        console.error("In-flight API token renewal engine execution failed:", refreshError);
-        // Note: If the refresh token is expired/revoked, the downstream app router or useAuth hook 
-        // will safely catch the terminal state and sweep local state profiles cleanly via clearSession.
+        const tokens = await refreshTokensOnce();
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
+        return api(originalRequest);
+      } catch {
+        await Promise.all([
+          SecureStore.deleteItemAsync(STORAGE_KEYS.accessToken),
+          SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken),
+        ]);
       }
     }
 
@@ -474,6 +490,7 @@ export interface ScreeningResult {
   parent_message: string;
   notes: string[];
   baby_age_hours?: number;
+  training_image_stored?: boolean;
   recommended_facilities: Facility[];
 }
 
@@ -517,6 +534,7 @@ export interface ScreeningPayload {
   user_lga?: string;
   facility_preference?: string;
   ui_language?: string;
+  allow_training_use?: boolean;
 }
 
 export const screeningApi = {
@@ -526,7 +544,11 @@ export const screeningApi = {
     // Attach image
     const filename  = payload.imageUri.split("/").pop() || "image.jpg";
     const extension = filename.split(".").pop()?.toLowerCase() || "jpg";
-    const mimeType  = extension === "png" ? "image/png" : "image/jpeg";
+    const mimeType = extension === "png"
+      ? "image/png"
+      : extension === "webp"
+        ? "image/webp"
+        : "image/jpeg";
 
     formData.append("image", {
       uri:  payload.imageUri,
@@ -552,6 +574,7 @@ export const screeningApi = {
     if (payload.user_lga)                formData.append("user_lga", payload.user_lga);
     if (payload.facility_preference)     formData.append("facility_preference", payload.facility_preference);
     formData.append("ui_language", payload.ui_language || "en");
+    formData.append("allow_training_use", String(payload.allow_training_use ?? false));
 
     const { data } = await api.post<ScreeningResult>("/screening/analyze", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -563,6 +586,10 @@ export const screeningApi = {
   history: async (): Promise<ScreeningHistoryItem[]> => {
     const { data } = await api.get("/screening/history");
     return data;
+  },
+
+  withdrawTrainingConsent: async (screeningId: string): Promise<void> => {
+    await api.delete(`/screening/${screeningId}/training-consent`);
   },
 };
 

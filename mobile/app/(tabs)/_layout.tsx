@@ -483,7 +483,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, useWindowDimensions } from "react-native";
 import { Colors } from "../../constants/colors";
-import { useAppStore } from "../../store/appStore"; // Import your global application store
+import { useAuthStore } from "../../hooks/useAuthStore";
 
 function useNavBarHeight() {
   const { width, height } = useWindowDimensions();
@@ -500,9 +500,7 @@ function useNavBarHeight() {
 export default function TabLayout() {
   const navBarHeight = useNavBarHeight();
   
-  // Safely extract the onboarded role state to evaluate feature accessibility
-  // If your store structures the role variable under a different name (like userRole), swap it here
-  const role = useAppStore((s) => s.role); 
+  const role = useAuthStore((s) => s.role);
 
   return (
     <Tabs

@@ -11038,7 +11038,7 @@
 
 import React, { useState, useEffect, useRef } from "react";      
 import {      
-  View, Text, ScrollView, TouchableOpacity,      
+  View, Text, ScrollView, TouchableOpacity, Alert,
   StyleSheet, ActivityIndicator, Image,      
   Switch, Modal, FlatList,      
 } from "react-native";      
@@ -11048,15 +11048,16 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { Ionicons } from "@expo/vector-icons";      
 import { useAppStore } from "../../store/appStore";      
 import { screeningApi, type ScreeningResult } from "../../services/api";      
-import { saveScreeningOffline } from "../../services/offlineStore";      
+import { saveScreeningOffline } from "../../services/offlineStoreSecure";
 import { useLocation } from "../../hooks/useLocation";      
 import { ResultCard } from "../../components/ResultCard";      
 import { useToast } from "../../hooks/useToast";      
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";      
 import { LGA_DATA } from "../../constants/lgaData";      
-import { runLocalInferenceWithUri } from "../../localInference";  
+import { LOCAL_MODEL_CLASS_INDEX, runLocalInferenceWithUri } from "../../localInference";
 import { useTranslations } from "../../hooks/useTranslations";  
 import { decisionConfig } from "../../constants/decisionMap";
+import { evaluateOfflineSafety } from "../../services/offlineTriage";
 
 const SKIN_TONES = [      
   { key: "very_light",  color: "#f8d5b4", labelKey: "skin.very_light",  fallbackLabel: "Very light" },      
@@ -11165,6 +11166,7 @@ export default function ScreeningScreen() {
   const [state,       setState]       = useState("");      
   const [lga,         setLga]         = useState("");      
   const [preference,  setPreference]  = useState("nearest");      
+  const [shareForTraining, setShareForTraining] = useState(false);
   const [loading,     setLoading]     = useState(false);      
   const [compressing, setCompressing] = useState(false);      
   const [result,      setResult]      = useState<ScreeningResult | null>(null);      
@@ -11308,6 +11310,7 @@ export default function ScreeningScreen() {
       user_lga:                    hasGPS ? undefined : (lga || undefined),      
       facility_preference:         preference,      
       ui_language:                 language,      
+      allow_training_use:          shareForTraining,
     };
 
     try {      
@@ -11322,46 +11325,62 @@ export default function ScreeningScreen() {
       console.log("[Screening] Server evaluation error, switching to localized edge inference model...");      
            
       try {      
-        const localPredictions = await runLocalInferenceWithUri(imageUri);
+        const [localPredictions, symptomSafety] = await Promise.all([
+          runLocalInferenceWithUri(imageUri),
+          Promise.resolve(evaluateOfflineSafety(apiPayload)),
+        ]);
 
-        let triageLevel = "OFFLINE_PENDING";      
-        let decisionReason = t("offline.processing_msg") === "offline.processing_msg"  
-          ? "Screening data saved locally. Deep learning classification was processed entirely offline on-device."  
-          : t("offline.processing_msg");      
-        let notesText = [t("offline.hardware_note") === "offline.hardware_note" ? "Processed on local hardware due to limited internet connectivity." : t("offline.hardware_note")];  
+        let triageLevel = symptomSafety.rawTriageLevel;
+        let finalDecision = symptomSafety.finalDecision;
+        let decisionReason = symptomSafety.reason;
+        const notesText = [
+          ...symptomSafety.notes,
+          "This offline screening is not a diagnosis and will be securely re-checked when the connection returns.",
+        ];
+        const jaundiceProbability = localPredictions?.[LOCAL_MODEL_CLASS_INDEX.jaundice];
+        const normalProbability = localPredictions?.[LOCAL_MODEL_CLASS_INDEX.normal];
 
-        if (localPredictions && localPredictions.length >= 2) {      
-          const probHealthy = localPredictions[0];      
-          const probJaundice = localPredictions[1];  
-
-          if (probJaundice > 0.50) {      
-            triageLevel = "URGENT_HOSPITAL_REVIEW";      
-            decisionReason = `${t("status.urgent")}: ${(probJaundice * 100).toFixed(1)}%.`;      
-            notesText.push("High confidence matching for local sclera color discoloration metrics.");      
-          } else {      
-            triageLevel = "ROUTINE_CARE";      
-            decisionReason = `${t("status.monitor")}: ${(probHealthy * 100).toFixed(1)}%.`;      
-            notesText.push("Sclera classification falls into standard clearance margins.");      
-          }      
-        }  
+        // The model is allowed to escalate GREEN to same-day review. It must
+        // never downgrade a RED or AMBER symptom result.
+        if (
+          typeof jaundiceProbability === "number" &&
+          jaundiceProbability >= 0.6 &&
+          triageLevel === "GREEN"
+        ) {
+          triageLevel = "AMBER";
+          finalDecision = "SAME_DAY_CLINIC_REVIEW";
+          decisionReason = "The offline image screen suggests possible jaundice. Please arrange same-day assessment.";
+          notesText.push("The local image screen raised the urgency to same-day review.");
+        } else if (localPredictions) {
+          notesText.push("The local image screen did not reduce the symptom-based safety advice.");
+        } else {
+          notesText.push("The local image screen could not run; the symptom-based safety advice is shown.");
+        }
 
         const offlineResultData: ScreeningResult = {      
           screening_id: "pending_local_sync_id",      
           raw_triage_level: triageLevel,      
-          final_decision: triageLevel === "URGENT_HOSPITAL_REVIEW" ? "SEEK_MEDICAL_ATTENTION" : "MONITOR_AT_HOME",      
+          final_decision: finalDecision,
           final_decision_reason: decisionReason,      
           notes: notesText,      
           recommended_facilities: [],      
           success: true,      
           created_at: new Date().toISOString(),      
-          raw_triage_reason: "Computed via on-device MobileNetV2 edge execution.",      
-          parent_message: "Calculations safely evaluated without cloud dependencies.",      
+          raw_triage_reason: symptomSafety.reason,
+          image_prediction: localPredictions
+            ? (jaundiceProbability! >= normalProbability! ? "jaundice" : "normal")
+            : undefined,
+          image_confidence: localPredictions ? Math.max(jaundiceProbability!, normalProbability!) : undefined,
+          confidence_band: localPredictions ? "offline_unvalidated" : undefined,
+          parent_message:
+            finalDecision === "URGENT_HOSPITAL_REVIEW"
+              ? "Please seek urgent medical assessment now."
+              : finalDecision === "SAME_DAY_CLINIC_REVIEW"
+                ? "Please arrange a same-day assessment by a health worker."
+                : "Continue feeding and monitoring closely. Seek care if yellowing, poor feeding, or unusual sleepiness develops.",
         };  
 
-        const offlineId = await saveScreeningOffline({    
-          ...apiPayload,    
-          facility_preference: `${preference} | local_triage:${triageLevel} | local_prob:${localPredictions ? localPredictions[1].toFixed(2) : 'null'}`    
-        });
+        const offlineId = await saveScreeningOffline(apiPayload);
 
         offlineResultData.screening_id = offlineId;
 
@@ -11369,6 +11388,7 @@ export default function ScreeningScreen() {
 
         setResult(offlineResultData);      
         setLastResult(offlineResultData);      
+        storeFollowUp(offlineResultData.final_decision);
         showToast(t("offline.complete") === "offline.complete" ? "Screening complete: Running via offline edge engine!" : t("offline.complete"));  
 
       } catch (offlineWriteError) {      
@@ -11394,6 +11414,7 @@ export default function ScreeningScreen() {
     setState("");      
     setLga("");      
     setPreference("nearest");      
+    setShareForTraining(false);
     setSymptoms({      
       hard_to_wake: false,      
       jaundice_first_24h: false,      
@@ -11403,6 +11424,35 @@ export default function ScreeningScreen() {
       yellow_gums_palms: false,      
       darker_skin: false,      
     });      
+  };
+
+  const withdrawLatestTrainingConsent = () => {
+    if (!result?.training_image_stored) return;
+
+    Alert.alert(
+      "Remove training photo?",
+      "This permanently deletes the stored photo used for model improvement. Your screening result remains available.",
+      [
+        { text: "Keep photo", style: "cancel" },
+        {
+          text: "Delete photo",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await screeningApi.withdrawTrainingConsent(result.screening_id);
+              setResult({ ...result, training_image_stored: false });
+              setShareForTraining(false);
+              showToast("Training photo deleted.");
+            } catch (error: any) {
+              showToast(
+                error?.response?.data?.detail
+                  ?? "Could not delete the training photo. Please try again while connected.",
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   const lgaOptions = state ? (LGA_DATA[state] ?? []) : [];      
@@ -11415,6 +11465,12 @@ export default function ScreeningScreen() {
         {result ? (      
           <>      
             <ResultCard result={result} />      
+            {result.training_image_stored && (
+              <TouchableOpacity style={s.withdrawConsentBtn} onPress={withdrawLatestTrainingConsent}>
+                <Ionicons name="trash-outline" size={16} color={Colors.rust} />
+                <Text style={s.withdrawConsentText}>Remove this training photo</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={s.resetBtn} onPress={reset}>      
               <Ionicons name="refresh-outline" size={16} color={Colors.brownLight} />      
               <Text style={s.resetBtnText}>{t("screening.new_screening") === "screening.new_screening" ? "New screening" : t("screening.new_screening")}</Text>      
@@ -11670,6 +11726,24 @@ export default function ScreeningScreen() {
                 ))}      
               </View>      
             </View>  
+
+            <View style={s.consentCard}>
+              <View style={s.consentTextWrap}>
+                <Text style={s.consentTitle}>Optional: help improve JaundiCare</Text>
+                <Text style={s.consentText}>
+                  If you choose yes, this photo may be stored in protected training storage to
+                  validate and improve the model. It is not needed for your result or care
+                  guidance, and you can delete it later.
+                </Text>
+              </View>
+              <Switch
+                value={shareForTraining}
+                onValueChange={setShareForTraining}
+                trackColor={{ false: Colors.border, true: Colors.sagePale }}
+                thumbColor={shareForTraining ? Colors.sage : Colors.brownLight}
+                accessibilityLabel="Allow this photo to be used for model improvement"
+              />
+            </View>
 
             {/* Submit Button */}      
             <TouchableOpacity      
@@ -11945,6 +12019,33 @@ const s = StyleSheet.create({
   prefCardSelected: { borderColor: Colors.coral, backgroundColor: "#fff5f2" },      
   prefLabel: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.brownLight },      
   prefSub:   { fontFamily: Fonts.regular, fontSize: 10, color: Colors.brownLight, textAlign: "center" },  
+
+  consentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 14,
+    marginBottom: 14,
+  },
+  consentTextWrap: { flex: 1 },
+  consentTitle: { fontFamily: Fonts.semibold, fontSize: 14, color: Colors.earth, marginBottom: 4 },
+  consentText: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 17, color: Colors.brownLight },
+  withdrawConsentBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.rustPale,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    marginTop: 12,
+  },
+  withdrawConsentText: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.rust },
 
   submitBtn: {      
     backgroundColor: Colors.coral,      

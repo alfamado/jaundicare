@@ -22,12 +22,17 @@
       "package": "com.jaundicare.app",
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -36,7 +41,7 @@
         "expo-camera",
         {
           "cameraPermission": "JaundiCare uses the camera to photograph your baby for jaundice screening.",
-          "microphonePermission": "JaundiCare uses the microphone for audio recording capabilities."
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -75,7 +80,15 @@
           }
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ],
       "onnxruntime-react-native",
       "expo-secure-store"
     ],

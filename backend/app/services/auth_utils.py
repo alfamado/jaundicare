@@ -17,7 +17,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-JWT_SECRET = os.getenv("JWT_SECRET", "change_this_in_production_secure_key_jaundicare")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET must be configured before the API can start.")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_MINS = 15      # 15 minutes
 REFRESH_TOKEN_DAYS = 30     # 30 days

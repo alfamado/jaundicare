@@ -97,6 +97,11 @@ async_client = httpx.AsyncClient(
 )
 
 
+async def close_termii_client() -> None:
+    if not async_client.is_closed:
+        await async_client.aclose()
+
+
 def format_phone_ng(phone: str) -> str:
     """
     Normalizes Nigerian phone numbers to Termii-compatible numeric E.164 format (234XXXXXXXXXX).
@@ -132,10 +137,11 @@ async def send_otp_sms(phone_number: str, otp_code: str) -> bool:
         "api_key": TERMII_API_KEY,
     }
 
-    # Development Fallback Mode: Prevents lockouts and wasting API units when testing locally
+    # A production system must never log or pretend to deliver a verification
+    # code. Configure Termii before enabling phone authentication.
     if not TERMII_API_KEY:
-        logger.warning(f"[Termii Fallback Log] Target: {formatted} | Code: {otp_code}")
-        return True
+        logger.error("TERMII_API_KEY is not configured; OTP was not sent.")
+        return False
 
     try:
         response = await async_client.post(
@@ -145,7 +151,7 @@ async def send_otp_sms(phone_number: str, otp_code: str) -> bool:
         
         # Guard against malformed non-JSON error payloads from gateway drops
         if response.status_code != 200:
-            logger.error(f"Termii Gateway returned non-200 status: {response.status_code} | Body: {response.text}")
+            logger.error("Termii Gateway returned non-200 status: %s", response.status_code)
             return False
             
         data = response.json()
@@ -154,7 +160,7 @@ async def send_otp_sms(phone_number: str, otp_code: str) -> bool:
             logger.info(f"OTP successfully dispatched via Termii to trace ID: {data.get('message_id')}")
             return True
             
-        logger.error(f"Termii API explicit rejection payload: {data}")
+        logger.error("Termii API explicitly rejected an OTP request.")
         return False
 
     except httpx.RequestError as exc:

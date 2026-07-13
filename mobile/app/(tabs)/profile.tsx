@@ -312,14 +312,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { profileApi } from "../../services/api";
+import api, { profileApi } from "../../services/api";
 import { useAppStore } from "../../store/appStore";
+import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 
 export default function ProfileScreen() {
   const queryClient = useQueryClient();
   const setProfile  = useAppStore((s) => s.setProfile);
+  const { logout } = useAuth();
   const { scheduleFollowUpReminders } = useNotifications();
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: profileApi.get });
@@ -389,6 +391,45 @@ export default function ProfileScreen() {
     }
 
     saveProfile();
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Log out", "Pending offline screenings on this device will be removed.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        onPress: async () => {
+          queryClient.clear();
+          await logout();
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete account permanently?",
+      "This deletes your baby profile, screening history, and any consented training image. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete permanently",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete("/auth/account");
+              queryClient.clear();
+              await logout();
+            } catch (error: any) {
+              Alert.alert(
+                "Deletion failed",
+                error?.response?.data?.detail ?? "Please try again while connected to the internet.",
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   const renderInputField = (
@@ -529,6 +570,15 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
+
+        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={18} color={Colors.earth} />
+          <Text style={s.logoutText}>Log out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.deleteBtn} onPress={handleDeleteAccount}>
+          <Ionicons name="trash-outline" size={18} color={Colors.rust} />
+          <Text style={s.deleteText}>Delete account and data</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -613,4 +663,25 @@ const s = StyleSheet.create({
   },
   savedLabel: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.brownLight },
   savedValue: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.earth },
+  logoutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    padding: 13,
+    marginTop: 8,
+  },
+  logoutText: { fontFamily: Fonts.semibold, fontSize: 14, color: Colors.earth },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 13,
+    marginTop: 6,
+  },
+  deleteText: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.rust },
 });

@@ -1,32 +1,37 @@
 services:
   - type: web
     name: jaundicare-api
-    env: python
+    runtime: python
     plan: free
+    rootDir: backend
     buildCommand: pip install -r requirements-prod.txt
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: jaundicare-db
           property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RATE_LIMIT_SALT
+        generateValue: true
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      - key: ENABLE_TRAINING_IMAGE_STORAGE
+        value: "false"
+      - key: TRAINING_IMAGE_RETENTION_DAYS
+        value: "30"
+      - key: TERMII_API_KEY
+        sync: false
+      - key: TERMII_SENDER_ID
+        sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: RATE_LIMIT_SALT
-        sync: false
-      - key: TRUST_PROXY_HEADERS
-        value: "true"
-      - key: ENABLE_TRAINING_IMAGE_STORAGE
-        value: "false"
-      - key: TERMII_API_KEY
-        sync: false
-      - key: TERMII_SENDER_ID
         sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false

@@ -429,14 +429,28 @@ Fully aligned with timezone-aware UTC metrics, direct database index lookups
 for hashed tokens, and safe parameter passing for multilingual user registration.
 """
 
+import hashlib
+import hmac
+import os
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from typing import Literal
 from uuid import UUID
 
 from app.db.session import get_db
-from app.db.models import User, OtpCode, RefreshToken, UserRole
+from app.db.models import (
+    ModelTrainingImage,
+    OtpCode,
+    OtpRequestAudit,
+    RefreshToken,
+    Screening,
+    User,
+    UserRole,
+)
+from app.services.cloudinary_service import delete_image
 from app.services.termii_service import send_otp_sms, format_phone_ng
 from app.services.auth_utils import (
     generate_otp, hash_otp, verify_otp, otp_expiry,
@@ -448,23 +462,81 @@ from app.services.auth_middleware import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 MAX_OTP_REQUESTS_PER_HOUR = 3
+MAX_OTP_REQUESTS_PER_IP_PER_HOUR = 12
+OTP_RESEND_COOLDOWN_SECONDS = 60
+OTP_AUDIT_RETENTION_DAYS = 2
 MAX_OTP_ATTEMPTS = 3
+
+
+def _is_truthy(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _client_fingerprint(request: Request) -> str:
+    """Return an HMAC fingerprint, never a raw client IP address."""
+    client_address = request.client.host if request.client else "unknown"
+
+    # Forwarded headers are only trusted when deployment explicitly opts in.
+    # Render is configured this way because its public ingress is the proxy.
+    if _is_truthy(os.getenv("TRUST_PROXY_HEADERS")):
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        if forwarded_for:
+            client_address = forwarded_for.split(",", 1)[0].strip() or client_address
+
+    secret = os.getenv("RATE_LIMIT_SALT") or os.getenv("JWT_SECRET")
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service is not configured.",
+        )
+
+    return hmac.new(
+        secret.encode("utf-8"),
+        client_address.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _rate_limited(detail: str, retry_after: int) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail=detail,
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
+def _lock_otp_rate_limit_keys(
+    db: Session,
+    phone_number: str,
+    client_fingerprint: str,
+) -> None:
+    """Serialize OTP throttling checks across Postgres API instances.
+
+    A count-and-insert limit is otherwise raceable when multiple requests hit
+    different workers at the same instant. PostgreSQL advisory transaction
+    locks are released automatically at the following commit or rollback.
+    """
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+
+    for key in sorted((f"otp-client:{client_fingerprint}", f"otp-phone:{phone_number}")):
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": key})
 
 
 # ── VALIDATION SCHEMAS ────────────────────────────────────────
 class RequestOTPSchema(BaseModel):
-    phone_number: str = Field(..., example="08012345678")
-    role: str = "parent"         # parent | health_worker
-    language: str = "en"         # en | yo (Yoruba)
+    phone_number: str = Field(..., min_length=10, max_length=20, examples=["08012345678"])
+    role: Literal["parent"] = "parent"
+    language: Literal["en", "yo"] = "en"
 
 
 class VerifyOTPSchema(BaseModel):
-    phone_number: str = Field(..., example="08012345678")
-    code: str = Field(..., example="123456")
+    phone_number: str = Field(..., min_length=10, max_length=20, examples=["08012345678"])
+    code: str = Field(..., pattern=r"^\d{6}$", examples=["123456"])
 
 
 class RefreshSchema(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(..., min_length=20, max_length=4096)
 
 
 class TokenResponse(BaseModel):
@@ -480,28 +552,77 @@ class TokenResponse(BaseModel):
 
 # ── REQUEST OTP ───────────────────────────────────────────────
 @router.post("/request-otp", status_code=status.HTTP_200_OK)
-async def request_otp(payload: RequestOTPSchema, db: Session = Depends(get_db)):
+async def request_otp(
+    request: Request,
+    payload: RequestOTPSchema,
+    db: Session = Depends(get_db),
+):
+    # Clinical roles must be provisioned through a verified organisation, not
+    # selected by a caller during public registration.
+    if payload.role != UserRole.parent.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Health-worker accounts must be provisioned by an administrator.",
+        )
+
     phone = format_phone_ng(payload.phone_number)
 
     # Validates against the stripped E.164 numeric string produced by our Termii helper
     if not phone.startswith("234") or len(phone) != 13:
         raise HTTPException(status_code=400, detail="Invalid Nigerian phone number format.")
 
-    # Timezone-aware window calculation
+    client_fingerprint = _client_fingerprint(request)
+    _lock_otp_rate_limit_keys(db, phone, client_fingerprint)
+
+    # Database-backed limits work consistently across API instances.
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
-    
-    recent_count = (
-        db.query(OtpCode)
+    one_minute_ago = datetime.now(timezone.utc) - timedelta(seconds=OTP_RESEND_COOLDOWN_SECONDS)
+    audit_retention_cutoff = datetime.now(timezone.utc) - timedelta(days=OTP_AUDIT_RETENTION_DAYS)
+
+    db.query(OtpRequestAudit).filter(
+        OtpRequestAudit.created_at < audit_retention_cutoff,
+    ).delete(synchronize_session=False)
+
+    recent_phone_count = (
+        db.query(OtpRequestAudit)
         .filter(
-            OtpCode.phone_number == phone,
-            OtpCode.created_at >= one_hour_ago,
+            OtpRequestAudit.phone_number == phone,
+            OtpRequestAudit.created_at >= one_hour_ago,
         )
         .count()
     )
-    if recent_count >= MAX_OTP_REQUESTS_PER_HOUR:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many OTP requests. Please wait up to an hour before trying again.",
+    if recent_phone_count >= MAX_OTP_REQUESTS_PER_HOUR:
+        raise _rate_limited(
+            "Too many verification-code requests. Please wait before trying again.",
+            retry_after=3600,
+        )
+
+    recent_ip_count = (
+        db.query(OtpRequestAudit)
+        .filter(
+            OtpRequestAudit.client_fingerprint == client_fingerprint,
+            OtpRequestAudit.created_at >= one_hour_ago,
+        )
+        .count()
+    )
+    if recent_ip_count >= MAX_OTP_REQUESTS_PER_IP_PER_HOUR:
+        raise _rate_limited(
+            "Too many verification-code requests from this network. Please wait before trying again.",
+            retry_after=3600,
+        )
+
+    recent_phone_request = (
+        db.query(OtpRequestAudit)
+        .filter(
+            OtpRequestAudit.phone_number == phone,
+            OtpRequestAudit.created_at >= one_minute_ago,
+        )
+        .first()
+    )
+    if recent_phone_request:
+        raise _rate_limited(
+            "Please wait one minute before requesting another verification code.",
+            retry_after=OTP_RESEND_COOLDOWN_SECONDS,
         )
 
     # Clean up stale/unused historical OTP tracking records instantly to prevent database creep
@@ -515,15 +636,24 @@ async def request_otp(payload: RequestOTPSchema, db: Session = Depends(get_db)):
 
     otp_record = OtpCode(
         phone_number=phone,
+        language=payload.language,
         code_hash=otp_hash,
         expires_at=otp_expiry(),
     )
     db.add(otp_record)
+    db.add(
+        OtpRequestAudit(
+            phone_number=phone,
+            client_fingerprint=client_fingerprint,
+        )
+    )
     db.commit()
 
     # Dispatch to Termii infrastructure
     sent = await send_otp_sms(phone, otp)
     if not sent:
+        otp_record.is_used = True
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="SMS gateway delivery failed. Please verify network access and try again.",
@@ -547,6 +677,7 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
             OtpCode.expires_at >= now,
         )
         .order_by(OtpCode.created_at.desc())
+        .with_for_update()
         .first()
     )
 
@@ -575,14 +706,11 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
 
     if not user:
         is_new_user = True
-        # Enforce valid application system boundaries during initialization
-        assigned_role = payload.role if payload.role in [UserRole.parent.value, UserRole.health_worker.value] else UserRole.parent.value
-        
         user = User(
             phone_number=phone,
             is_verified=True,
-            role=assigned_role,
-            language=payload.language,
+            role=UserRole.parent.value,
+            language=otp_record.language or "en",
             created_at=now,
             last_login=now
         )
@@ -641,14 +769,40 @@ async def refresh_access_token(payload: RefreshSchema, db: Session = Depends(get
         .filter(
             RefreshToken.user_id == user_id,
             RefreshToken.token_hash == target_hash,
-            RefreshToken.is_revoked == False,
-            RefreshToken.expires_at >= now,
         )
+        .with_for_update()
         .first()
     )
 
     if not matched:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked or blacklisted.")
+
+    if matched.is_revoked:
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_revoked == False,
+        ).update({"is_revoked": True}, synchronize_session=False)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse was detected. Sign in again.",
+        )
+
+    is_unexpired = (
+        db.query(RefreshToken.id)
+        .filter(
+            RefreshToken.id == matched.id,
+            RefreshToken.expires_at >= now,
+        )
+        .first()
+    )
+    if not is_unexpired:
+        matched.is_revoked = True
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired.",
+        )
 
     # Execute atomic token rotation
     matched.is_revoked = True
@@ -714,3 +868,50 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "is_verified": current_user.is_verified,
         "created_at": current_user.created_at.isoformat(),
     }
+
+
+@router.delete("/account", status_code=status.HTTP_200_OK)
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete the authenticated account and all owned clinical data."""
+    screenings = (
+        db.query(Screening)
+        .filter(Screening.user_id == current_user.id)
+        .all()
+    )
+    screening_ids = [screening.id for screening in screenings]
+    training_images = (
+        db.query(ModelTrainingImage)
+        .filter(ModelTrainingImage.screening_id.in_(screening_ids))
+        .all()
+        if screening_ids
+        else []
+    )
+    public_ids = {
+        training_image.cloudinary_public_id for training_image in training_images
+    }
+    public_ids.update(
+        screening.cloudinary_public_id
+        for screening in screenings
+        if screening.cloudinary_public_id
+    )
+
+    for public_id in public_ids:
+        if not delete_image(public_id):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Stored image deletion failed. Please retry account deletion.",
+            )
+
+    try:
+        for training_image in training_images:
+            db.delete(training_image)
+        db.delete(current_user)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return {"message": "Account and associated screening data were deleted."}

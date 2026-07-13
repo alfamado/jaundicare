@@ -242,24 +242,39 @@
 
 
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.db.session import create_all_tables
-from app.routes.screening import router as screening_router
+
+def _allowed_origins() -> list[str]:
+    configured = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+    if origins:
+        return origins
+
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        raise RuntimeError("CORS_ALLOWED_ORIGINS must be configured in production.")
+
+    return ["http://localhost:5500", "http://127.0.0.1:5500"]
+
+from app.routes.screening_secure import router as screening_router
 from app.routes.profile   import router as profile_router
 from app.routes.facility  import router as facility_router
 from app.routes.helpmum   import router as helpmum_router
 from app.routes.auth      import router as auth_router
+from app.services.termii_service import close_termii_client
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables on server start
-    create_all_tables()
-    yield
+    try:
+        yield
+    finally:
+        await close_termii_client()
 
 app = FastAPI(
     title="JaundiCare API",
@@ -270,11 +285,28 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
+
+allowed_hosts = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
 
 # Route registrations (All cleanly mounted on the app instance AFTER creation)
 app.include_router(auth_router)  # Moved here

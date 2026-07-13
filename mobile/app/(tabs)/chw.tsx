@@ -1017,9 +1017,10 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../store/appStore";
+import { useAuthStore } from "../../hooks/useAuthStore";
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 import { ConsultChat } from "../../components/ConsultChat";
 
@@ -1032,6 +1033,11 @@ function calcAgeHours(dob: string, tob: string): number | null {
 }
 
 export default function CHWScreen() {
+  const role = useAuthStore((s) => s.role);
+  if (role !== "health_worker") {
+    return <Redirect href="/(tabs)" />;
+  }
+
   // Production-grade optimized atomic store subscriptions
   const caseload = useAppStore((s) => s.caseload) || [];
   const addCase = useAppStore((s) => s.addCase);

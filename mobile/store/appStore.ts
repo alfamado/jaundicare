@@ -360,6 +360,8 @@ export const useAppStore = create<AppState>()(
 
       clearStoreOnLogout: () => 
         set({
+          onboarded: false,
+          role: null,
           profile: null,
           lastScreening: null,
           history: [],
@@ -372,14 +374,28 @@ export const useAppStore = create<AppState>()(
     {
       name: "jaundicare-store",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persistedState: unknown) => {
+        const previous = (persistedState ?? {}) as Partial<AppState>;
+        return {
+          language: previous.language ?? "en",
+          onboarded: previous.onboarded ?? false,
+          role: previous.role ?? null,
+          profile: null,
+          lastScreening: null,
+          history: [],
+          caseload: [],
+          lastUrgentDecision: null,
+          lastUrgentTime: null,
+          followupDismissed: false,
+        };
+      },
       
       // Scaling fix: partialize limits disk serialization strictly to long-term configuration data 
       partialize: (state) => ({
         language: state.language,
         onboarded: state.onboarded,
         role: state.role,
-        caseload: state.caseload, // Retain case trackers for field worker continuity
-        profile: state.profile,
       }),
     }
   )

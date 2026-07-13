@@ -1337,6 +1337,7 @@ import { router } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../store/appStore";
+import { useAuthStore } from "../hooks/useAuthStore";
 import { useWelcomeAudio } from "../hooks/useAudio";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
 
@@ -1361,6 +1362,7 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = useAppStore((s) => s.finishOnboarding);
   const setLanguage      = useAppStore((s) => s.setLanguage);
+  const accountRole      = useAuthStore((s) => s.role);
   const { playWelcome, stopAudio } = useWelcomeAudio();
 
   // Proactive safety hook: ensure audio stream shuts down if user leaves onboarding early
@@ -1387,8 +1389,9 @@ export default function OnboardingScreen() {
   const finish = () => {
     if (!role) return;
     stopAudio();
-    finishOnboarding(role);
-    router.replace(role === "health_worker" ? "/(tabs)/chw" : "/(tabs)/profile");
+    const assignedRole = accountRole === "health_worker" ? "health_worker" : "parent";
+    finishOnboarding(assignedRole);
+    router.replace(assignedRole === "health_worker" ? "/(tabs)/chw" : "/(tabs)/profile");
   };
 
   return (

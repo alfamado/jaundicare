@@ -28,7 +28,7 @@
 
 
 
-from typing import Optional
+from typing import Literal, Optional
 from fastapi import APIRouter, Query
 from app.services.facility_service import get_recommended_facilities
 
@@ -40,9 +40,9 @@ def recommend_facilities(
     state: Optional[str] = Query(None),
     lga: Optional[str] = Query(None),
     triage_level: Optional[str] = Query(None),
-    lat: Optional[float] = Query(None),
-    lon: Optional[float] = Query(None),
-    preference: Optional[str] = Query("nearest"),  # nearest | government | clinic
+    lat: Optional[float] = Query(None, ge=-90, le=90),
+    lon: Optional[float] = Query(None, ge=-180, le=180),
+    preference: Literal["nearest", "government", "clinic"] = Query("nearest"),
 ):
     facilities = get_recommended_facilities(
         user_lat=lat,
@@ -50,7 +50,7 @@ def recommend_facilities(
         user_state=state,
         user_lga=lga,
         triage_level=triage_level or "MONITOR_AT_HOME",
-        facility_preference=preference or "nearest",
+        facility_preference=preference,
         max_results=5,
     )
     return {

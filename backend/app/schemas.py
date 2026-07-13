@@ -528,8 +528,9 @@
 
 
 
-from typing import Optional, List
-from pydantic import BaseModel, Field
+from datetime import date, time
+from typing import Literal, Optional, List
+from pydantic import BaseModel, Field, field_validator
 
 
 class FacilityResponseSchema(BaseModel):
@@ -542,7 +543,7 @@ class FacilityResponseSchema(BaseModel):
     phone: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    services: List[str] = []
+    services: List[str] = Field(default_factory=list)
     distance_km: Optional[float] = None
     far_fallback: Optional[bool] = None
     fallback_note: Optional[str] = None
@@ -552,12 +553,39 @@ class FacilityResponseSchema(BaseModel):
 
 
 class BabyProfileCreate(BaseModel):
-    baby_name: str
+    baby_name: str = Field(..., min_length=1, max_length=100)
     date_of_birth: str
     time_of_birth: str
-    sex: Optional[str] = None
-    gestational_age_weeks: Optional[int] = None
-    parent_name: Optional[str] = None
+    sex: Optional[Literal["male", "female"]] = None
+    gestational_age_weeks: Optional[int] = Field(None, ge=20, le=45)
+    parent_name: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("baby_name", "parent_name")
+    @classmethod
+    def trim_names(cls, value: str | None) -> str | None:
+        return value.strip() if value else value
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def valid_birth_date(cls, value: str) -> str:
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError as error:
+            raise ValueError("date_of_birth must be a valid YYYY-MM-DD date") from error
+        if parsed > date.today():
+            raise ValueError("date_of_birth cannot be in the future")
+        return value
+
+    @field_validator("time_of_birth")
+    @classmethod
+    def valid_birth_time(cls, value: str) -> str:
+        try:
+            time.fromisoformat(value)
+        except ValueError as error:
+            raise ValueError("time_of_birth must be a valid HH:MM time") from error
+        if len(value) != 5:
+            raise ValueError("time_of_birth must use HH:MM format")
+        return value
 
 
 class BabyProfileResponse(BaseModel):
@@ -583,11 +611,12 @@ class ScreeningResponse(BaseModel):
     final_decision: str
     final_decision_reason: str
     parent_message: str
-    notes: List[str] = []
+    notes: List[str] = Field(default_factory=list)
     screening_id: Optional[str] = None
     created_at: Optional[str] = None
     baby_age_hours: Optional[int] = None
-    recommended_facilities: List[FacilityResponseSchema] = []
+    training_image_stored: bool = False
+    recommended_facilities: List[FacilityResponseSchema] = Field(default_factory=list)
 
 
 class ScreeningHistoryItem(BaseModel):
@@ -604,9 +633,9 @@ class ScreeningHistoryItem(BaseModel):
     final_decision: str
     final_decision_reason: str
     parent_message: str
-    notes: List[str] = []
+    notes: List[str] = Field(default_factory=list)
     symptoms: dict
-    recommended_facilities: List[FacilityResponseSchema] = []
+    recommended_facilities: List[FacilityResponseSchema] = Field(default_factory=list)
 
 
 class HealthCheckResponse(BaseModel):

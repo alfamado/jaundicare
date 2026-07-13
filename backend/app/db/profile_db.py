@@ -8,14 +8,19 @@ from sqlalchemy.orm import Session
 from app.db.models import BabyProfile
 
 
-def get_latest_profile(db: Session):
-    """Get the most recently created baby profile."""
-    return db.query(BabyProfile).order_by(BabyProfile.created_at.desc()).first()
+def get_latest_profile(db: Session, user_id):
+    """Get the authenticated user's most recently updated baby profile."""
+    return (
+        db.query(BabyProfile)
+        .filter(BabyProfile.user_id == user_id)
+        .order_by(BabyProfile.updated_at.desc())
+        .first()
+    )
 
 
-def save_profile(db: Session, data: dict) -> BabyProfile:
-    """Create or update baby profile. For now single-profile model."""
-    existing = get_latest_profile(db)
+def save_profile(db: Session, data: dict, user_id) -> BabyProfile:
+    """Create or update the authenticated user's current baby profile."""
+    existing = get_latest_profile(db, user_id)
 
     if existing:
         for key, value in data.items():
@@ -26,7 +31,7 @@ def save_profile(db: Session, data: dict) -> BabyProfile:
         db.refresh(existing)
         return existing
 
-    profile = BabyProfile(**data)
+    profile = BabyProfile(**data, user_id=user_id)
     db.add(profile)
     db.commit()
     db.refresh(profile)

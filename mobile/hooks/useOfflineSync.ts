@@ -180,7 +180,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import { syncOfflineStore, getPendingCount } from '../services/offlineStore';
+import { syncOfflineStore, getPendingCount } from '../services/offlineStoreSecure';
 
 export const useOfflineSync = () => {
   const isProcessing = useRef(false);

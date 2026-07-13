@@ -104,13 +104,18 @@ from sqlalchemy.orm import Session
 from app.schemas import BabyProfileCreate, BabyProfileResponse
 from app.db.session import get_db
 from app.db import profile_db
+from app.db.models import User
+from app.services.auth_middleware import get_current_user
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
 @router.get("/baby", response_model=BabyProfileResponse)
-def fetch_baby_profile(db: Session = Depends(get_db)):
-    profile   = profile_db.get_latest_profile(db)
+def fetch_baby_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile   = profile_db.get_latest_profile(db, current_user.id)
     age_hours = profile_db.calculate_age_hours(profile)
     return profile_db.profile_to_dict(profile, age_hours)
 
@@ -118,9 +123,10 @@ def fetch_baby_profile(db: Session = Depends(get_db)):
 @router.post("/baby", response_model=BabyProfileResponse)
 def create_or_update_baby_profile(
     payload: BabyProfileCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     data    = payload.model_dump(exclude_none=True)
-    profile = profile_db.save_profile(db, data)
+    profile = profile_db.save_profile(db, data, current_user.id)
     age     = profile_db.calculate_age_hours(profile)
     return profile_db.profile_to_dict(profile, age)

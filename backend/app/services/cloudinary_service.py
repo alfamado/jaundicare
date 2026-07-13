@@ -1,16 +1,19 @@
 """
 JaundiCare — Cloudinary Service
-Handles all image uploads for screening and model training.
-Every image uploaded through JaundiCare is stored permanently
-in Cloudinary so it can be used for model retraining later.
+Handles opt-in model-training image uploads.
+
+Screening images are not uploaded by default. This service is only called
+after explicit training-use consent has been recorded with the screening.
 """
 
 import os
+import logging
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 # Configure Cloudinary from environment variables
 cloudinary.config(
@@ -28,7 +31,7 @@ def upload_screening_image(
     triage_level: str = None,
 ) -> dict:
     """
-    Upload a screening image to Cloudinary.
+    Upload a consented screening image to authenticated Cloudinary storage.
 
     Returns:
         {
@@ -41,18 +44,12 @@ def upload_screening_image(
     Images are organised in folders by month for easy management:
         jaundicare/screenings/2025-06/<screening_id>
 
-    Tags are added so the ML team can filter by skin tone and triage level
-    when pulling images for labelling.
+    The asset is authenticated rather than publicly retrievable. Clinical
+    metadata is retained in PostgreSQL rather than being exposed as tags.
     """
     import datetime
     month_folder = datetime.datetime.utcnow().strftime("%Y-%m")
     public_id    = f"jaundicare/screenings/{month_folder}/{screening_id}"
-
-    tags = ["screening"]
-    if skin_tone:
-        tags.append(f"skin_{skin_tone}")
-    if triage_level:
-        tags.append(f"triage_{triage_level.lower()}")
 
     result = cloudinary.uploader.upload(
         file_path,
@@ -60,7 +57,8 @@ def upload_screening_image(
         folder          = None,     # public_id already includes folder
         overwrite       = True,
         resource_type   = "image",
-        tags            = tags,
+        type            = "authenticated",
+        tags            = ["training-consent"],
         # Store original quality — important for model training
         quality         = "auto:best",
         # Generate a 300px thumbnail for fast preview
@@ -79,10 +77,15 @@ def upload_screening_image(
 def delete_image(public_id: str) -> bool:
     """Delete an image from Cloudinary. Used for GDPR/data deletion requests."""
     try:
-        result = cloudinary.uploader.destroy(public_id)
-        return result.get("result") == "ok"
-    except Exception as e:
-        print(f"Cloudinary delete error: {e}")
+        result = cloudinary.uploader.destroy(
+            public_id,
+            resource_type="image",
+            type="authenticated",
+            invalidate=True,
+        )
+        return result.get("result") in {"ok", "not found"}
+    except Exception:
+        logger.exception("Cloudinary image deletion failed")
         return False
 
 
@@ -96,16 +99,15 @@ def get_training_images(
     Query Cloudinary for screening images by tag.
     Used by the ML pipeline to pull images for model retraining.
     """
-    tag = "screening"
-    if skin_tone:
-        tag = f"skin_{skin_tone}"
-    elif triage_level:
-        tag = f"triage_{triage_level.lower()}"
+    # All stored assets carry exactly one non-clinical tag. Clinical filters
+    # belong in PostgreSQL so they are not exposed through asset metadata.
+    tag = "training-consent"
 
     result = cloudinary.api.resources_by_tag(
         tag,
         max_results = limit,
         resource_type = "image",
+        type = "authenticated",
     )
 
     return result.get("resources", [])

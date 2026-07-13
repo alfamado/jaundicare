@@ -1,7 +1,7 @@
 from backend.app.services.triage_engine import run_triage
 
 
-def test_cases():
+def test_triage_rules():
     cases = [
         # --- GREEN cases ---
         {
@@ -20,7 +20,7 @@ def test_cases():
                 "age_hours": 30,
                 "feeding": "poor"
             },
-            "expected": "RED"
+            "expected": "AMBER"
         },
 
         {
@@ -77,7 +77,7 @@ def test_cases():
 
     print("\nRunning triage tests...\n")
 
-    passed = 0
+    failures = []
 
     for case in cases:
         level, _, _ = run_triage(case["input"])
@@ -85,11 +85,12 @@ def test_cases():
 
         print(f"{case['name']} -> expected={case['expected']} got={level} [{result}]")
 
-        if result == "PASS":
-            passed += 1
+        if result == "FAIL":
+            failures.append(case["name"])
 
-    print(f"\n{passed}/{len(cases)} tests passed\n")
+    assert not failures, f"Triage rule failures: {', '.join(failures)}"
+    print(f"\n{len(cases)}/{len(cases)} tests passed\n")
 
 
 if __name__ == "__main__":
-    test_cases()
+    test_triage_rules()

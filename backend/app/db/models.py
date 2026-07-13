@@ -448,7 +448,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean,
-    DateTime, JSON, Text, ForeignKey
+    DateTime, Index, JSON, Text, ForeignKey
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -477,6 +477,7 @@ class User(Base):
 
     # Dynamic loading allows appending filters cleanly without loading everything into memory
     profiles = relationship("BabyProfile", back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
+    screenings = relationship("Screening", back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
 
 
@@ -486,11 +487,28 @@ class OtpCode(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     phone_number = Column(String(20), nullable=False, index=True)
+    language = Column(String(5), default="en", nullable=False)
     code_hash = Column(String(255), nullable=False) 
     expires_at = Column(DateTime, nullable=False, index=True) # Indexed to allow fast cron-job cleanups of expired codes
     is_used = Column(Boolean, default=False, nullable=False)
     attempts = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class OtpRequestAudit(Base):
+    """Short-lived, pseudonymous audit trail for distributed OTP throttling."""
+
+    __tablename__ = "otp_request_audits"
+    __table_args__ = (
+        Index("ix_otp_request_audits_phone_created", "phone_number", "created_at"),
+        Index("ix_otp_request_audits_client_created", "client_fingerprint", "created_at"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    phone_number = Column(String(20), nullable=False)
+    # HMAC of the client IP. Do not store the raw IP address in clinical data.
+    client_fingerprint = Column(String(64), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 # ── REFRESH TOKENS ───────────────────────────────────────────
@@ -515,7 +533,7 @@ class BabyProfile(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # Indexed user_id ensures loading a mother's dashboard takes milliseconds under heavy load
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     baby_name = Column(String(100), nullable=False)
     parent_name = Column(String(100), nullable=True)
     date_of_birth = Column(String(10), nullable=False)
@@ -534,6 +552,9 @@ class Screening(Base):
     __tablename__ = "screenings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # A screening belongs to the authenticated account even if its baby profile
+    # is later deleted. This is the primary tenant-isolation boundary.
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     # Indexed profile_id ensures immediate retrieval of an individual child's screening history
     profile_id = Column(UUID(as_uuid=True), ForeignKey("baby_profiles.id", ondelete="CASCADE"), nullable=True, index=True)
     original_filename = Column(String(255), nullable=True)
@@ -559,6 +580,7 @@ class Screening(Base):
     ui_language = Column(String(5), default="en")
     created_at = Column(DateTime, default=datetime.utcnow, index=True) # Indexed for high-speed chronological reports
 
+    user = relationship("User", back_populates="screenings")
     profile = relationship("BabyProfile", back_populates="screenings")
 
 
@@ -567,8 +589,13 @@ class ModelTrainingImage(Base):
     __tablename__ = "model_training_images"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    # Kept independent without cascade so the ML team never loses valuable clinical training historical imagery data
-    screening_id = Column(UUID(as_uuid=True), ForeignKey("screenings.id"), nullable=False, index=True)
+    # Consented training data follows the source screening's deletion lifecycle.
+    screening_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("screenings.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     cloudinary_url = Column(Text, nullable=False)
     cloudinary_public_id = Column(String(255), nullable=False)
     ground_truth_label = Column(String(50), nullable=True)
@@ -579,5 +606,8 @@ class ModelTrainingImage(Base):
     final_decision = Column(String(100), nullable=True)
     triage_level = Column(String(50), nullable=True)
     is_usable_for_training = Column(Boolean, default=True, nullable=False)
+    consent_version = Column(String(40), nullable=True)
+    consented_at = Column(DateTime, nullable=True)
+    consent_withdrawn_at = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

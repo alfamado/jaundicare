@@ -775,21 +775,9 @@ def combine_decision(
         }
 
     # AMBER triage — image modifies the urgency level
+    # Reported symptom urgency is monotonic: image output can escalate a
+    # result, but must not lower a same-day review recommendation.
     if raw_triage_level == "AMBER":
-        if image_uncertain:
-            return {
-                "final_decision": "RECHECK_SOON_OR_CLINIC_IF_CONCERNED",
-                "final_decision_reason": tr(language, "amber_uncertain_reason"),
-                "parent_message": tr(language, "recheck_parent"),
-                "notes": notes,
-            }
-        if weak_normal:
-            return {
-                "final_decision": "RECHECK_SOON_OR_CLINIC_IF_CONCERNED",
-                "final_decision_reason": tr(language, "amber_weak_reason"),
-                "parent_message": tr(language, "recheck_parent"),
-                "notes": notes,
-            }
         return {
             "final_decision": "SAME_DAY_CLINIC_REVIEW",
             "final_decision_reason": raw_triage_reason,

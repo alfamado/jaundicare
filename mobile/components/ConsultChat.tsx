@@ -451,7 +451,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
-import { API_BASE_URL } from "../services/api";
+import api from "../services/api";
 
 interface Message {
   id: string;
@@ -499,18 +499,13 @@ export function ConsultChat({
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/consult/${endpoint}`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message: trimmedText }),
-        signal:  controller.signal,
-      });
+      const { data } = await api.post(
+        `/consult/${endpoint}`,
+        { message: trimmedText },
+        { signal: controller.signal },
+      );
       
       clearTimeout(timeoutId);
-
-      if (!res.ok) throw new Error("Server responded with error status");
-      
-      const data = await res.json();
 
       const assistantMsg: Message = {
         id:        `ai_${Date.now()}`,
