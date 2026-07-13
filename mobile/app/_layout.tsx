@@ -529,7 +529,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         {/* Core Auth & Core Application Navigation Gateways */}
         <Stack.Screen name="onboarding" />
-        <Stack.Screen name="auth" />
+        <Stack.Screen name="auth/phone" />
+        <Stack.Screen name="auth/otp" />
         <Stack.Screen name="(tabs)" />
 
         {/* Clinical Overlays Configured as Focused Modals */}

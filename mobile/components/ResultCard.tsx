@@ -607,7 +607,7 @@
 import React, { useMemo } from "react";
 import {
   View, Text, TouchableOpacity,
-  StyleSheet, Share, LayoutAnimation, Platform, UIManager
+  StyleSheet, Share, LayoutAnimation
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
@@ -617,10 +617,6 @@ import { useAppStore } from "../store/appStore";
 import { useTranslations } from "../hooks/useTranslations";
 import { getNextStepTranslationKeys } from "../constants/screeningUtils";
 import type { ScreeningResult } from "../services/api";
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 interface Props {
   result: ScreeningResult;
