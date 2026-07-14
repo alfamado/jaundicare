@@ -56,8 +56,14 @@
 
 import { useCallback } from "react";
 import { useAppStore } from "../store/appStore";
+import { uiTranslations } from "../i18n/ui";
 
-const translations: Record<string, Record<string, string>> = {
+type TranslationValue = string | TranslationDictionary;
+interface TranslationDictionary {
+  [key: string]: TranslationValue;
+}
+
+const translations: Record<string, TranslationDictionary> = {
   en:  require("../i18n/en.json"),
   yo:  require("../i18n/yo.json"),
   ha:  require("../i18n/ha.json"),
@@ -70,11 +76,31 @@ export function useTranslations() {
   const setLanguage = useAppStore((s) => s.setLanguage);
 
   // Eliminate useState/useEffect entirely. Derive the active dictionary instantly in the render loop.
-  const activeDictionary = translations[language] ?? translations.en;
+  const activeDictionary: TranslationDictionary = {
+    ...(translations[language] ?? translations.en),
+    ...(uiTranslations[language as keyof typeof uiTranslations] ?? uiTranslations.en),
+  };
+
+  const resolve = (dictionary: TranslationDictionary, key: string): string | undefined => {
+    const direct = dictionary[key];
+    if (typeof direct === "string") return direct;
+
+    const nested = key.split(".").reduce<TranslationValue | undefined>(
+      (value, segment) =>
+        value && typeof value === "object" ? value[segment] : undefined,
+      dictionary,
+    );
+    return typeof nested === "string" ? nested : undefined;
+  };
 
   const t = useCallback(
-    (key: string): string => activeDictionary[key] ?? key,
-    [language] // Re-bind exclusively when the language primitive string alternates
+    (key: string, values?: Record<string, string | number>): string => {
+      const text = resolve(activeDictionary, key) ?? resolve(translations.en, key) ?? key;
+      return text.replace(/\{(\w+)\}/g, (_, name: string) =>
+        values?.[name] === undefined ? `{${name}}` : String(values[name])
+      );
+    },
+    [activeDictionary]
   );
 
   const switchLanguage = useCallback(

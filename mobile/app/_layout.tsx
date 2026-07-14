@@ -474,10 +474,10 @@ export default function RootLayout() {
       
       // Enqueue routing evaluation to the next macro-task tick to guarantee Expo Router is fully mounted
       const timer = setTimeout(() => {
-        if (!isAuthenticated) {
-          router.replace("/auth/phone");
-        } else if (!onboarded) {
+        if (!onboarded) {
           router.replace("/onboarding");
+        } else if (!isAuthenticated) {
+          router.replace("/auth/phone");
         } else {
           // User is onboarded and authenticated, push safely to dashboard destination
           router.replace("/(tabs)");

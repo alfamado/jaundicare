@@ -451,7 +451,13 @@ from app.db.models import (
     UserRole,
 )
 from app.services.cloudinary_service import delete_image
-from app.services.termii_service import send_otp_sms, format_phone_ng
+from app.services.termii_service import (
+    DemoOtpConfigurationError,
+    format_phone_ng,
+    get_demo_otp_for_phone,
+    is_demo_mode,
+    send_otp_sms,
+)
 from app.services.auth_utils import (
     generate_otp, hash_otp, verify_otp, otp_expiry,
     create_access_token, create_refresh_token, refresh_token_expiry,
@@ -527,7 +533,7 @@ def _lock_otp_rate_limit_keys(
 class RequestOTPSchema(BaseModel):
     phone_number: str = Field(..., min_length=10, max_length=20, examples=["08012345678"])
     role: Literal["parent"] = "parent"
-    language: Literal["en", "yo"] = "en"
+    language: Literal["en", "yo", "ha", "ig", "pcm"] = "en"
 
 
 class VerifyOTPSchema(BaseModel):
@@ -570,6 +576,21 @@ async def request_otp(
     # Validates against the stripped E.164 numeric string produced by our Termii helper
     if not phone.startswith("234") or len(phone) != 13:
         raise HTTPException(status_code=400, detail="Invalid Nigerian phone number format.")
+
+    demo_mode = is_demo_mode()
+    try:
+        demo_otp = get_demo_otp_for_phone(phone) if demo_mode else None
+    except DemoOtpConfigurationError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Presentation authentication is not configured correctly.",
+        )
+
+    if demo_mode and demo_otp is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This phone number is not enabled for the presentation demo.",
+        )
 
     client_fingerprint = _client_fingerprint(request)
     _lock_otp_rate_limit_keys(db, phone, client_fingerprint)
@@ -631,7 +652,7 @@ async def request_otp(
         OtpCode.is_used == False,
     ).delete()
 
-    otp = generate_otp()
+    otp = demo_otp or generate_otp()
     otp_hash = hash_otp(otp)
 
     otp_record = OtpCode(
@@ -649,17 +670,21 @@ async def request_otp(
     )
     db.commit()
 
-    # Dispatch to Termii infrastructure
+    # Dispatch via Termii or stage the configured presentation-only OTP.
     sent = await send_otp_sms(phone, otp)
     if not sent:
         otp_record.is_used = True
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="SMS gateway delivery failed. Please verify network access and try again.",
+            detail="Verification-code delivery failed. Please try again.",
         )
 
-    return {"message": "OTP sent successfully.", "phone_number": phone}
+    return {
+        "message": "Demo verification is ready." if demo_mode else "OTP sent successfully.",
+        "phone_number": phone,
+        "delivery_mode": "demo" if demo_mode else "sms",
+    }
 
 
 # ── VERIFY OTP ────────────────────────────────────────────────

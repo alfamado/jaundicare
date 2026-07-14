@@ -316,9 +316,19 @@ import api, { profileApi } from "../../services/api";
 import { useAppStore } from "../../store/appStore";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
+import { useTranslations } from "../../hooks/useTranslations";
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 
+const LANGUAGE_OPTIONS = [
+  { key: "en", label: "English" },
+  { key: "yo", label: "Yoruba" },
+  { key: "ha", label: "Hausa" },
+  { key: "ig", label: "Igbo" },
+  { key: "pcm", label: "Pidgin" },
+];
+
 export default function ProfileScreen() {
+  const { t, language, switchLanguage } = useTranslations();
   const queryClient = useQueryClient();
   const setProfile  = useAppStore((s) => s.setProfile);
   const { logout } = useAuth();
@@ -366,10 +376,10 @@ export default function ProfileScreen() {
       setProfile(saved);
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       await scheduleFollowUpReminders(saved);
-      Alert.alert("Saved", "Baby profile saved successfully.");
+      Alert.alert(t("profile.saved_title"), t("common.profile_saved"));
     },
     onError: (err: any) => {
-      Alert.alert("Error", err?.message ?? "Could not save profile.");
+      Alert.alert(t("common.error"), err?.message ?? t("common.request_failed"));
     },
   });
 
@@ -465,26 +475,43 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView style={s.scroll} contentContainerStyle={s.content}>
-        <Text style={s.heading}>Baby Profile</Text>
+        <Text style={s.heading}>{t("profile.title")}</Text>
         <Text style={s.subheading}>
-          Save your baby's details once. The app will calculate age automatically for each screening.
+          {t("profile.text")}
         </Text>
+
+        <View style={s.languageCard}>
+          <Text style={s.label}>{t("ui.settings.language")}</Text>
+          <View style={s.languageRow}>
+            {LANGUAGE_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[s.languageButton, language === option.key && s.languageButtonSelected]}
+                onPress={() => switchLanguage(option.key)}
+              >
+                <Text style={[s.languageButtonText, language === option.key && s.languageButtonTextSelected]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Current age display */}
         {ageLabel && (
           <View style={s.ageBadge}>
             <Ionicons name="time-outline" size={16} color={Colors.sage} />
-            <Text style={s.ageText}>Current age: {ageLabel}</Text>
+            <Text style={s.ageText}>{t("profile.current_age_hours")}: {ageLabel}</Text>
           </View>
         )}
 
         <View style={s.card}>
-          {renderInputField("Baby name *",  "baby_name",    { placeholder: "e.g. Baby Adewale" })}
-          {renderInputField("Parent name",  "parent_name",  { placeholder: "e.g. Fatima Adewale" })}
+          {renderInputField(`${t("profile.baby_name")} *`,  "baby_name",    { placeholder: "e.g. Baby Adewale" })}
+          {renderInputField(t("profile.parent_name"),  "parent_name",  { placeholder: "e.g. Fatima Adewale" })}
 
           {/* Date of birth */}
           <View style={s.field}>
-            <Text style={s.label}>Date of birth *</Text>
+            <Text style={s.label}>{t("profile.date_of_birth")} *</Text>
             <TextInput
               style={s.input}
               value={form.date_of_birth}
@@ -499,7 +526,7 @@ export default function ProfileScreen() {
 
           {/* Time of birth */}
           <View style={s.field}>
-            <Text style={s.label}>Time of birth *</Text>
+            <Text style={s.label}>{t("profile.time_of_birth")} *</Text>
             <TextInput
               style={s.input}
               value={form.time_of_birth}
@@ -514,7 +541,7 @@ export default function ProfileScreen() {
 
           {/* Sex Selection */}
           <View style={s.field}>
-            <Text style={s.label}>Sex</Text>
+            <Text style={s.label}>{t("profile.sex")}</Text>
             <View style={s.sexRow}>
               {["male", "female"].map((opt) => (
                 <TouchableOpacity
@@ -523,14 +550,14 @@ export default function ProfileScreen() {
                   onPress={() => setForm((f) => ({ ...f, sex: opt }))}
                 >
                   <Text style={[s.sexBtnText, form.sex === opt && s.sexBtnTextSelected]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {opt === "male" ? t("common.male") : t("common.female")}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          {renderInputField("Gestational age (weeks)", "gestational_age_weeks", {
+          {renderInputField(t("profile.gestational_age"), "gestational_age_weeks", {
             placeholder: "e.g. 38",
             keyboardType: "numeric",
             maxLength: 2,
@@ -544,22 +571,22 @@ export default function ProfileScreen() {
             onPress={handleSave}
             disabled={isPending}
           >
-            {isPending ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>Save profile</Text>}
+            {isPending ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>{t("profile.save")}</Text>}
           </TouchableOpacity>
         </View>
 
         {/* Saved profile summary overlay */}
         {profile?.exists && (
           <View style={s.savedCard}>
-            <Text style={s.savedTitle}>Saved profile</Text>
+            <Text style={s.savedTitle}>{t("profile.saved_title")}</Text>
             {[
-              ["Baby name",         profile.baby_name],
-              ["Parent name",       profile.parent_name],
-              ["Date of birth",     profile.date_of_birth],
-              ["Time of birth",     profile.time_of_birth],
-              ["Sex",               profile.sex],
-              ["Gestational age",   profile.gestational_age_weeks ? `${profile.gestational_age_weeks} weeks` : null],
-              ["Age in hours",      ageLabel],
+              [t("profile.baby_name"),         profile.baby_name],
+              [t("profile.parent_name"),       profile.parent_name],
+              [t("profile.date_of_birth"),     profile.date_of_birth],
+              [t("profile.time_of_birth"),     profile.time_of_birth],
+              [t("profile.sex"),               profile.sex === "male" ? t("common.male") : profile.sex === "female" ? t("common.female") : profile.sex],
+              [t("profile.gestational_age"),   profile.gestational_age_weeks ? `${profile.gestational_age_weeks}` : null],
+              [t("profile.current_age_hours"), ageLabel],
             ].map(([lbl, val]) =>
               val ? (
                 <View key={lbl as string} style={s.savedRow}>
@@ -591,6 +618,12 @@ const s = StyleSheet.create({
 
   heading:    { fontFamily: Fonts.bold, fontSize: 22, color: Colors.earth, marginBottom: 6 },
   subheading: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.brownLight, marginBottom: 16, lineHeight: 22 },
+  languageCard: { backgroundColor: Colors.cream, borderRadius: Radius.lg, padding: 12, marginBottom: 14 },
+  languageRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  languageButton: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 7, backgroundColor: Colors.card },
+  languageButtonSelected: { borderColor: Colors.coral, backgroundColor: "#fff5f2" },
+  languageButtonText: { fontFamily: Fonts.medium, fontSize: 12, color: Colors.brownLight },
+  languageButtonTextSelected: { color: Colors.coral },
 
   ageBadge: {
     flexDirection:   "row",

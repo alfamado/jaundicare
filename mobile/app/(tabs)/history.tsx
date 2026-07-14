@@ -601,6 +601,7 @@ import { screeningApi } from "../../services/api";
 import { useHistory } from "../../hooks/useHistory"; 
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 import { decisionConfig } from "../../constants/decisionMap";
+import { useTranslations } from "../../hooks/useTranslations";
 
 interface UnifiedHistoryItem {
   screening_id?: string;
@@ -615,6 +616,7 @@ interface UnifiedHistoryItem {
 }
 
 export default function HistoryScreen() {
+  const { t } = useTranslations();
   const { data: onlineHistory, isRefetching, refetch } = useQuery({
     queryKey: ["history"],
     queryFn: screeningApi.history,
@@ -670,19 +672,24 @@ export default function HistoryScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.coral} />
         }
       >
-        <Text style={s.heading}>Screening History</Text>
-        <Text style={s.subheading}>Pull down to refresh. Tap a card to see details.</Text>
+        <Text style={s.heading}>{t("history.title")}</Text>
+        <Text style={s.subheading}>{t("history.text")}</Text>
 
         {unifiedItems.length === 0 ? (
           <View style={s.empty}>
             <Ionicons name="document-outline" size={40} color={Colors.brownLight} />
-            <Text style={s.emptyTitle}>No screenings yet</Text>
-            <Text style={s.emptyText}>Run your first screening to see history here.</Text>
+            <Text style={s.emptyTitle}>{t("history.empty")}</Text>
+            <Text style={s.emptyText}>{t("result.empty")}</Text>
           </View>
         ) : (
           unifiedItems.map((item, index) => {
             const dm      = decisionConfig(item.final_decision);
             const isFirst = index === 0;
+            const decisionLabel = item.final_decision.includes("URGENT")
+              ? t("status.urgent")
+              : item.final_decision.includes("SAME_DAY")
+                ? t("status.same_day")
+                : t("status.monitor");
 
             const raw = item.image_confidence;
             const pct = raw != null
@@ -692,7 +699,7 @@ export default function HistoryScreen() {
             const ageHours = item.baby_age_hours;
             const ageDays  = ageHours != null ? Math.floor(ageHours / 24) : null;
             const ageStr = ageDays != null
-              ? ageDays > 0 ? `${ageDays}d ${ageHours! % 24}h old` : `${ageHours!}h old`
+              ? ageDays > 0 ? `${ageDays}d ${ageHours! % 24}h` : `${ageHours!}h`
               : null;
 
             let dateStr = "";
@@ -711,19 +718,19 @@ export default function HistoryScreen() {
                 <View style={s.cardTop}>
                   <View style={[s.badge, { backgroundColor: dm.color + "18", borderColor: dm.color }]}>
                     <Text style={s.badgeIcon}>{dm.icon}</Text>
-                    <Text style={[s.badgeText, { color: dm.color }]}>{dm.label}</Text>
+                    <Text style={[s.badgeText, { color: dm.color }]}>{decisionLabel || dm.label}</Text>
                   </View>
                   
                   <View style={s.tagContainer}>
                     {item.isOffline && (
                       <View style={s.offlineTag}>
                         <Ionicons name="cloud-offline-outline" size={10} color={Colors.brown} />
-                        <Text style={s.offlineTagText}>Saving Offline</Text>
+                        <Text style={s.offlineTagText}>{t("status.pending")}</Text>
                       </View>
                     )}
                     {isFirst && (
                       <View style={s.latestTag}>
-                        <Text style={s.latestTagText}>Latest</Text>
+                        <Text style={s.latestTagText}>{t("dashboard.latest_screening")}</Text>
                       </View>
                     )}
                   </View>
@@ -750,12 +757,12 @@ export default function HistoryScreen() {
                         {item.image_prediction.charAt(0).toUpperCase() + item.image_prediction.slice(1)}
                       </Text>
                     )}
-                    {pct && <Text style={s.predConf}>{pct}% confidence</Text>}
+                    {pct && <Text style={s.predConf}>{pct}% {t("hw_labels.confidence")}</Text>}
                   </View>
                 )}
 
                 <Text style={s.reason} numberOfLines={2}>
-                  {item.final_decision_reason || "No summary notes provided."}
+                  {item.final_decision_reason || t("common.no_notes")}
                 </Text>
               </View>
             );

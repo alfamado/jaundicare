@@ -386,6 +386,7 @@ export const useAuth = () => {
   const clearAuthenticated = useAuthStore((state) => state.clearAuthenticated);
   const setHydrated = useAuthStore((state) => state.setHydrated);
   const clearAppData = useAppStore((state) => state.clearStoreOnLogout);
+  const setOnboardingRole = useAppStore((state) => state.finishOnboarding);
 
   // Bind to reactive UI read state variables if needed locally
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -450,6 +451,11 @@ export const useAuth = () => {
         phone: authData.phone_number,
         role: authData.role,
       });
+      // The server-provisioned role is authoritative. This prevents a role
+      // selected before authentication from enabling a health-worker UI path.
+      setOnboardingRole(
+        authData.role === "health_worker" ? "health_worker" : "parent"
+      );
     } catch (error) {
       console.error("Critical failure establishing secure login session:", error);
       throw new Error("Could not securely save login session. Please try again.");

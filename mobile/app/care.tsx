@@ -765,6 +765,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
 import { ConsultChat } from "../components/ConsultChat";
+import { useTranslations } from "../hooks/useTranslations";
 
 const SECTIONS = {
   warning: {
@@ -825,12 +826,62 @@ const SECTIONS = {
 type SectionKey = keyof typeof SECTIONS;
 
 export default function CareScreen() {
+  const { t } = useTranslations();
   const [activeSection, setActiveSection] = useState<SectionKey>("warning");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const sections = {
+    warning: {
+      icon: "warning-outline" as const,
+      color: Colors.rust,
+      bg: Colors.rustPale,
+      title: t("dashboard.warning_signs"),
+      subtitle: t("parent.message.same_day"),
+      items: [
+        { id: "w1", title: t("edu.urgent.1"), body: t("next.urgent.3") },
+        { id: "w2", title: t("edu.urgent.2"), body: t("next.urgent.3") },
+        { id: "w3", title: t("edu.urgent.3"), body: t("next.same_day.1") },
+        { id: "w4", title: t("edu.urgent.4"), body: t("next.urgent.3") },
+        { id: "w5", title: t("edu.urgent.5"), body: t("next.urgent.3") },
+      ],
+    },
+    feeding: {
+      icon: "nutrition-outline" as const,
+      color: Colors.sage,
+      bg: Colors.sagePale,
+      title: t("care.feeding.title"),
+      subtitle: t("care.feeding.body"),
+      items: [
+        { id: "f1", title: t("care.feeding.1"), body: t("care.feeding.body") },
+        { id: "f2", title: t("care.feeding.2"), body: t("next.same_day.2") },
+        { id: "f3", title: t("care.feeding.3"), body: t("next.same_day.1") },
+      ],
+    },
+    education: {
+      icon: "book-outline" as const,
+      color: Colors.amber,
+      bg: Colors.amberPale,
+      title: t("education.title"),
+      subtitle: t("edu.what_is.body"),
+      items: [
+        { id: "e1", title: t("edu.what_is.title"), body: t("edu.what_is.body") },
+        { id: "e2", title: t("edu.dark_skin.title"), body: t("edu.dark_skin.body") },
+        { id: "e3", title: t("edu.what_to_do.title"), body: t("edu.what_to_do.4") },
+        { id: "e4", title: t("edu.what_not_to_do.title"), body: t("edu.what_not_to_do.3") },
+      ],
+    },
+    ask_bot: {
+      icon: "chatbubble-ellipses-outline" as const,
+      color: Colors.coral,
+      bg: Colors.coral + "15",
+      title: "MamaBot AI",
+      subtitle: t("app.support"),
+      items: [],
+    },
+  };
 
   const isChatActive = activeSection === "ask_bot";
-  const section = SECTIONS[activeSection === "ask_bot" ? "warning" : activeSection];
+  const section = sections[activeSection === "ask_bot" ? "warning" : activeSection];
   
   const filtered = section.items.filter(
     (item) =>
@@ -844,7 +895,7 @@ export default function CareScreen() {
       {/* Persist header area seamlessly without breaking vertical height variables */}
       {!isChatActive && (
         <View style={s.header}>
-          <Text style={s.heading}>Care Guide</Text>
+          <Text style={s.heading}>{t("care.title")}</Text>
           <View style={s.searchContainer}>
             <TextInput
               style={s.search}
@@ -864,8 +915,8 @@ export default function CareScreen() {
 
       {/* Main Switcher Tab Bar */}
       <View style={s.tabs}>
-        {(Object.keys(SECTIONS) as SectionKey[]).map((key) => {
-          const sec = SECTIONS[key];
+        {(Object.keys(sections) as SectionKey[]).map((key) => {
+          const sec = sections[key];
           const active = activeSection === key;
           return (
             <TouchableOpacity

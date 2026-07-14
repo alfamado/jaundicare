@@ -286,10 +286,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { profileApi, screeningApi } from "../../services/api";
 import { useAppStore } from "../../store/appStore";
+import { useTranslations } from "../../hooks/useTranslations";
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 import { decisionConfig } from "../../constants/decisionMap";
 
 export default function DashboardScreen() {
+  const { t } = useTranslations();
   // Production-isolated atomic store setters
   const setProfile = useAppStore((s) => s.setProfile);
   const setHistory = useAppStore((s) => s.setHistory);
@@ -315,13 +317,22 @@ export default function DashboardScreen() {
 
   const latest    = history?.[0];
   const dm        = latest ? decisionConfig(latest.final_decision) : null;
+  const decisionLabel = latest
+    ? latest.final_decision.includes("URGENT")
+      ? t("status.urgent")
+      : latest.final_decision.includes("SAME_DAY")
+        ? t("status.same_day")
+        : latest.final_decision.includes("RECHECK")
+          ? t("status.monitor")
+          : t("status.monitor")
+    : null;
   const babyName  = profile?.exists ? profile.baby_name : null;
   const ageHours  = profile?.age_hours;
 
   const ageLabel = ageHours != null
     ? ageHours < 24
-      ? `${ageHours}h old`
-      : `${Math.floor(ageHours / 24)}d ${ageHours % 24}h old`
+      ? `${ageHours}h`
+      : `${Math.floor(ageHours / 24)}d ${ageHours % 24}h`
     : null;
 
   const onRefresh = () => {
@@ -346,7 +357,7 @@ export default function DashboardScreen() {
             </View>
             <View>
               <Text style={s.brandName}>JaundiCare</Text>
-              <Text style={s.brandSub}>Newborn jaundice support</Text>
+              <Text style={s.brandSub}>{t("app.support")}</Text>
             </View>
           </View>
         </View>
@@ -354,9 +365,9 @@ export default function DashboardScreen() {
         {/* Baby profile card — Target clean absolute pointer layout */}
         <TouchableOpacity style={s.profileCard} onPress={() => router.push("/profile")}>
           <View style={s.profileLeft}>
-            <Text style={s.profileLabel}>Baby profile</Text>
+            <Text style={s.profileLabel}>{t("nav.profile")}</Text>
             <Text style={s.profileName}>
-              {babyName ?? "No profile saved yet"}
+              {babyName ?? t("dashboard.no_profile")}
             </Text>
             {ageLabel && <Text style={s.profileAge}>{ageLabel}</Text>}
           </View>
@@ -366,10 +377,10 @@ export default function DashboardScreen() {
         {/* Latest screening status */}
         {latest && dm ? (
           <View style={[s.statusCard, { borderLeftColor: dm.color }]}>
-            <Text style={s.statusLabel}>Latest screening</Text>
+            <Text style={s.statusLabel}>{t("dashboard.latest_screening")}</Text>
             <View style={s.statusRow}>
               <Text style={s.statusIcon}>{dm.icon}</Text>
-              <Text style={[s.statusText, { color: dm.color }]}>{dm.label}</Text>
+              <Text style={[s.statusText, { color: dm.color }]}>{decisionLabel ?? dm.label}</Text>
             </View>
             <Text style={s.statusDate}>
               {new Date(latest.created_at).toLocaleDateString(undefined, {
@@ -379,8 +390,8 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <View style={s.noScreeningCard}>
-            <Text style={s.noScreeningText}>No screening yet</Text>
-            <Text style={s.noScreeningSub}>Run a screening to see your baby's result here.</Text>
+            <Text style={s.noScreeningText}>{t("dashboard.no_screening")}</Text>
+            <Text style={s.noScreeningSub}>{t("result.empty")}</Text>
           </View>
         )}
 
@@ -390,24 +401,24 @@ export default function DashboardScreen() {
           onPress={() => router.push("/screening")}
         >
           <Ionicons name="scan" size={18} color="#fff" />
-          <Text style={s.primaryBtnText}>Start baby check</Text>
+          <Text style={s.primaryBtnText}>{t("dashboard.start_check")}</Text>
         </TouchableOpacity>
 
         {/* Reference cards */}
-        <Text style={s.sectionTitle}>Quick reference</Text>
+        <Text style={s.sectionTitle}>{t("dashboard.how_to_check")}</Text>
 
         <View style={s.refCard}>
           <View style={s.refHeader}>
             <View style={[s.refIcon, { backgroundColor: Colors.amberPale }]}>
               <Ionicons name="eye-outline" size={16} color={Colors.amberDark} />
             </View>
-            <Text style={s.refTitle}>How to check your baby</Text>
+            <Text style={s.refTitle}>{t("dashboard.how_to_check")}</Text>
           </View>
           {[
-            "Look at the whites of the eyes",
-            "Check the gums",
-            "Check the palms and soles",
-            "Watch feeding and alertness closely",
+            t("dashboard.check.1"),
+            t("dashboard.check.2"),
+            t("dashboard.check.3"),
+            t("dashboard.check.4"),
           ].map((item, i) => (
             <View key={i} style={s.refRow}>
               <View style={s.refDot} />
@@ -424,10 +435,10 @@ export default function DashboardScreen() {
             <Text style={s.refTitle}>Warning signs — seek help now</Text>
           </View>
           {[
-            "Difficulty waking for feeds",
-            "Poor feeding",
-            "Floppiness or unusual drowsiness",
-            "Dark urine or pale stool",
+            t("dashboard.warning.1"),
+            t("dashboard.warning.2"),
+            t("dashboard.warning.3"),
+            t("dashboard.warning.4"),
           ].map((item, i) => (
             <View key={i} style={s.refRow}>
               <View style={[s.refDot, { backgroundColor: Colors.rust }]} />
@@ -440,7 +451,7 @@ export default function DashboardScreen() {
         <View style={s.disclaimer}>
           <Ionicons name="information-circle-outline" size={14} color={Colors.brownLight} />
           <Text style={s.disclaimerText}>
-            This tool supports screening. It does not replace a doctor, midwife, or bilirubin test.
+            {t("trust.title")} {t("trust.body")}
           </Text>
         </View>
       </ScrollView>

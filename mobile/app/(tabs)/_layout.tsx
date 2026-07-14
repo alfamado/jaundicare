@@ -484,6 +484,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Platform, useWindowDimensions } from "react-native";
 import { Colors } from "../../constants/colors";
 import { useAuthStore } from "../../hooks/useAuthStore";
+import { useTranslations } from "../../hooks/useTranslations";
 
 function useNavBarHeight() {
   const { width, height } = useWindowDimensions();
@@ -499,7 +500,7 @@ function useNavBarHeight() {
 
 export default function TabLayout() {
   const navBarHeight = useNavBarHeight();
-  
+  const { t } = useTranslations();
   const role = useAuthStore((s) => s.role);
 
   return (
@@ -525,7 +526,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: t("nav.dashboard"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
@@ -535,7 +536,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="screening"
         options={{
-          title: "Screening",
+          title: t("nav.screening"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="scan-outline" size={size} color={color} />
           ),
@@ -545,7 +546,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("nav.profile"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
@@ -555,7 +556,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: t("nav.history"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
           ),
@@ -565,7 +566,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chw"
         options={{
-          title: "CHW",
+          title: t("nav.chw"),
           // Hides the tab completely from the visual bar if the user is signed in as a parent
           href: role === "health_worker" ? "/chw" : null,
           tabBarIcon: ({ color, size }) => (

@@ -181,8 +181,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 import { useAppStore } from "../../store/appStore"; 
 import { API_BASE_URL } from "../../services/api";
+import { useTranslations } from "../../hooks/useTranslations";
 
 export default function PhoneScreen() {
+  const { t } = useTranslations();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -208,7 +210,7 @@ export default function PhoneScreen() {
 
   const requestOTP = async () => {
     if (!isValid) {
-      setError("Enter a valid 11-digit Nigerian phone number starting with 0.");
+      setError(t("ui.auth.invalid_phone"));
       return;
     }
 
@@ -233,9 +235,15 @@ export default function PhoneScreen() {
         return;
       }
 
-      router.push({ pathname: "./auth/otp", params: { phone } });
+      router.push({
+        pathname: "/auth/otp",
+        params: {
+          phone,
+          demo: data.delivery_mode === "demo" ? "1" : "0",
+        },
+      });
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(t("ui.auth.network_error"));
     } finally {
       setLoading(false);
     }
@@ -257,9 +265,9 @@ export default function PhoneScreen() {
             <Ionicons name="water" size={34} color={Colors.coral} />
           </View>
 
-          <Text style={s.title}>Welcome to JaundiCare</Text>
+          <Text style={s.title}>{t("ui.auth.welcome")}</Text>
           <Text style={s.sub}>
-            Enter your phone number to get started. We'll send you a verification code.
+            {t("ui.auth.phone_intro")}
           </Text>
 
           <View style={s.inputWrap}>
@@ -293,12 +301,12 @@ export default function PhoneScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={s.btnText}>Send verification code</Text>
+              <Text style={s.btnText}>{t("ui.auth.send_code")}</Text>
             )}
           </TouchableOpacity>
 
           <Text style={s.disclaimer}>
-            Your phone number is used only for verification. We never share it with third parties.
+            {t("ui.auth.phone_privacy")}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

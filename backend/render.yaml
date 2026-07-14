@@ -30,6 +30,22 @@ services:
         sync: false
       - key: TERMII_SENDER_ID
         sync: false
+      - key: OTP_DELIVERY_MODE
+        value: termii
+      - key: DEMO_AUTH_ENABLED
+        value: "false"
+      - key: DEMO_ALLOWED_PHONE_1
+        sync: false
+      - key: DEMO_OTP_CODE_1
+        sync: false
+      - key: DEMO_ALLOWED_PHONE_2
+        sync: false
+      - key: DEMO_OTP_CODE_2
+        sync: false
+      - key: DEMO_ALLOWED_PHONE_3
+        sync: false
+      - key: DEMO_OTP_CODE_3
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: ALLOWED_HOSTS

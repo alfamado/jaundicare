@@ -256,13 +256,15 @@ import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 import { useAppStore } from "../../store/appStore";
 import { API_BASE_URL } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useTranslations } from "../../hooks/useTranslations";
 
 const OTP_LENGTH   = 6;
 const RESEND_SECS  = 60;
 
 export default function OTPScreen() {
-  const { phone }    = useLocalSearchParams<{ phone: string }>();
+  const { phone, demo } = useLocalSearchParams<{ phone: string; demo?: string }>();
   const { login }    = useAuth();
+  const { t } = useTranslations();
 
   const [code, setCode]           = useState("");
   const [loading, setLoading]     = useState(false);
@@ -275,6 +277,8 @@ export default function OTPScreen() {
 
   // Extract ongoing app states cleanly
   const currentLanguage = useAppStore((s) => s.language) || "en";
+  const onboardingComplete = useAppStore((s) => s.onboarded);
+  const isDemo = demo === "1";
 
   useEffect(() => {
     startCountdown();
@@ -335,13 +339,9 @@ export default function OTPScreen() {
 
       await login(data);
 
-      if (data.is_new_user) {
-        router.replace("/onboarding");
-      } else {
-        router.replace("/(tabs)");
-      }
+      router.replace(onboardingComplete ? "/(tabs)" : "/onboarding");
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(t("ui.auth.network_error"));
       setCode("");
       startCountdown();
     } finally {
@@ -372,7 +372,7 @@ export default function OTPScreen() {
         setError(data.detail ?? "Could not resend OTP.");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("ui.auth.retry_network"));
     } finally {
       setResending(false);
     }
@@ -393,9 +393,9 @@ export default function OTPScreen() {
           <Ionicons name="phone-portrait-outline" size={34} color={Colors.coral} />
         </View>
 
-        <Text style={s.title}>Enter verification code</Text>
+        <Text style={s.title}>{t("ui.auth.enter_code")}</Text>
         <Text style={s.sub}>
-          We sent a 6-digit code to{"\n"}
+          {isDemo ? t("ui.auth.demo_code") : t("ui.auth.sent_code")}{"\n"}
           <Text style={s.phone}>{maskedPhone}</Text>
         </Text>
 
@@ -433,7 +433,7 @@ export default function OTPScreen() {
         {loading && (
           <View style={s.verifying}>
             <ActivityIndicator color={Colors.coral} size="small" />
-            <Text style={s.verifyingText}>Verifying...</Text>
+            <Text style={s.verifyingText}>{t("ui.auth.verifying")}</Text>
           </View>
         )}
 
@@ -446,20 +446,22 @@ export default function OTPScreen() {
 
         <View style={s.resendRow}>
           {countdown > 0 ? (
-            <Text style={s.countdownText}>Resend code in {countdown}s</Text>
+            <Text style={s.countdownText}>{t("ui.auth.resend_in", { seconds: countdown })}</Text>
           ) : (
             <TouchableOpacity onPress={resendOTP} disabled={resending || loading}>
               {resending ? (
                 <ActivityIndicator size="small" color={Colors.coral} />
               ) : (
-                <Text style={s.resendText}>Resend code</Text>
+                <Text style={s.resendText}>{t("ui.auth.resend")}</Text>
               )}
             </TouchableOpacity>
           )}
         </View>
 
         <Text style={s.disclaimer}>
-          Did not receive it? Check your SMS inbox or wait for the timer to resend.
+          {isDemo
+            ? t("ui.auth.demo_hint")
+            : t("ui.auth.sms_hint")}
         </Text>
       </View>
     </SafeAreaView>

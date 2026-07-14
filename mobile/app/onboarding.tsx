@@ -1337,8 +1337,8 @@ import { router } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../store/appStore";
-import { useAuthStore } from "../hooks/useAuthStore";
 import { useWelcomeAudio } from "../hooks/useAudio";
+import { useTranslations } from "../hooks/useTranslations";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
 
 type Role = "parent" | "health_worker";
@@ -1362,8 +1362,8 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = useAppStore((s) => s.finishOnboarding);
   const setLanguage      = useAppStore((s) => s.setLanguage);
-  const accountRole      = useAuthStore((s) => s.role);
   const { playWelcome, stopAudio } = useWelcomeAudio();
+  const { t } = useTranslations();
 
   // Proactive safety hook: ensure audio stream shuts down if user leaves onboarding early
   useEffect(() => {
@@ -1389,9 +1389,10 @@ export default function OnboardingScreen() {
   const finish = () => {
     if (!role) return;
     stopAudio();
-    const assignedRole = accountRole === "health_worker" ? "health_worker" : "parent";
-    finishOnboarding(assignedRole);
-    router.replace(assignedRole === "health_worker" ? "/(tabs)/chw" : "/(tabs)/profile");
+    finishOnboarding(role);
+    // Language and introductory audio are chosen before authentication, but
+    // personal data and all app tabs remain unavailable until OTP verification.
+    router.replace("/auth/phone");
   };
 
   return (
@@ -1418,8 +1419,8 @@ export default function OnboardingScreen() {
             </View>
 
             <Text style={s.title}>Welcome to JaundiCare</Text>
-            <Text style={s.sub}>Choose your language</Text>
-            <Text style={s.sub2}>Tap to hear a welcome message</Text>
+            <Text style={s.sub}>{t("ui.onboarding.choose_language")}</Text>
+            <Text style={s.sub2}>{t("ui.onboarding.tap_audio")}</Text>
 
             <View style={s.langGrid}>
               {LANGUAGES.map((l) => (
@@ -1446,7 +1447,7 @@ export default function OnboardingScreen() {
             </View>
 
             <TouchableOpacity style={s.primaryBtn} onPress={goNext} activeOpacity={0.8}>
-              <Text style={s.primaryBtnText}>Continue</Text>
+              <Text style={s.primaryBtnText}>{t("ui.onboarding.continue")}</Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -1459,22 +1460,22 @@ export default function OnboardingScreen() {
               <Ionicons name="people" size={34} color={Colors.amber} />
             </View>
 
-            <Text style={s.title}>Who are you?</Text>
-            <Text style={s.sub}>This helps us show the most relevant experience for you.</Text>
+            <Text style={s.title}>{t("ui.onboarding.who_are_you")}</Text>
+            <Text style={s.sub}>{t("ui.onboarding.role_help")}</Text>
 
             <View style={s.roleGrid}>
               {([
                 {
                   key:      "parent" as Role,
                   icon:     "person-outline" as const,
-                  title:    "Parent or caregiver",
-                  subtitle: "I want to monitor my baby's health",
+                  title:    t("ui.onboarding.parent"),
+                  subtitle: t("ui.onboarding.parent_subtitle"),
                 },
                 {
                   key:      "health_worker" as Role,
                   icon:     "medkit-outline" as const,
-                  title:    "Health worker or CHW",
-                  subtitle: "I support newborn care in the community",
+                  title:    t("ui.onboarding.health_worker"),
+                  subtitle: t("ui.onboarding.health_worker_subtitle"),
                 },
               ]).map((option) => (
                 <TouchableOpacity
@@ -1499,7 +1500,7 @@ export default function OnboardingScreen() {
             <View style={s.disclaimer}>
               <Ionicons name="shield-checkmark-outline" size={14} color={Colors.brownLight} style={{ marginTop: 2 }} />
               <Text style={s.disclaimerText}>
-                This is a screening support tool. It does not replace a doctor, midwife, or bilirubin test.
+                {t("ui.onboarding.safety")}
               </Text>
             </View>
           </View>
@@ -1512,15 +1513,15 @@ export default function OnboardingScreen() {
               <Ionicons name="checkmark-circle" size={34} color={Colors.sage} />
             </View>
 
-            <Text style={s.title}>You are all set</Text>
+            <Text style={s.title}>{t("ui.onboarding.ready")}</Text>
             <Text style={s.sub}>
-              Start by creating a baby profile so the app can track age automatically, then run your first screening.
+              {t("ui.onboarding.ready_text")}
             </Text>
 
             <View style={s.stepsList}>
               {(role === "health_worker"
-                ? ["Open Community Care Mode", "Start an assisted screening", "Track follow-up reminders"]
-                : ["Create a baby profile", "Run a screening", "View your result and next steps"]
+                ? [t("chw.title"), t("chw.actions.screening"), t("reminder.title")]
+                : [t("profile.title"), t("screening.title"), t("result.what_next")]
               ).map((item, i) => (
                 <View key={i} style={s.stepRow}>
                   <View style={s.stepNum}>
@@ -1532,7 +1533,7 @@ export default function OnboardingScreen() {
             </View>
 
             <TouchableOpacity style={s.primaryBtn} onPress={finish} activeOpacity={0.8}>
-              <Text style={s.primaryBtnText}>Open JaundiCare</Text>
+              <Text style={s.primaryBtnText}>{t("ui.onboarding.open_app")}</Text>
             </TouchableOpacity>
           </View>
         )}
