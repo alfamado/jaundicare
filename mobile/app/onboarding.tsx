@@ -1365,12 +1365,14 @@ export default function OnboardingScreen() {
   const { playWelcome, stopAudio } = useWelcomeAudio();
   const { t } = useTranslations();
 
-  // Proactive safety hook: ensure audio stream shuts down if user leaves onboarding early
+  // Start the default English narration once, then always stop it when this
+  // screen is left. Language selection replaces this single narration.
   useEffect(() => {
+    playWelcome("en");
     return () => {
       stopAudio();
     };
-  }, []);
+  }, [playWelcome, stopAudio]);
 
   const selectLanguage = (key: string) => {
     setLang(key);
@@ -1379,10 +1381,12 @@ export default function OnboardingScreen() {
   };
 
   const goNext = () => {
+    stopAudio();
     setStep((s) => s + 1);
   };
 
   const goBack = () => {
+    stopAudio();
     setStep((s) => Math.max(0, s - 1));
   };
 

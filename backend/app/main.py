@@ -145,8 +145,8 @@
 # from app.routes.profile   import router as profile_router
 # from app.routes.facility  import router as facility_router
 
-# from app.routes.helpmum import router as helpmum_router
-# app.include_router(helpmum_router)
+# from app.routes.consultation import router as consultation_router
+# app.include_router(consultation_router)
 
 
 # @asynccontextmanager
@@ -199,7 +199,7 @@
 # from app.routes.screening import router as screening_router
 # from app.routes.profile   import router as profile_router
 # from app.routes.facility  import router as facility_router
-# from app.routes.helpmum   import router as helpmum_router
+# from app.routes.consultation import router as consultation_router
 # from app.routes.auth import router as auth_router
 # app.include_router(auth_router)
 
@@ -228,7 +228,7 @@
 # app.include_router(screening_router)
 # app.include_router(profile_router)
 # app.include_router(facility_router)
-# app.include_router(helpmum_router)
+# app.include_router(consultation_router)
 
 
 # @app.get("/")
@@ -265,7 +265,7 @@ def _allowed_origins() -> list[str]:
 from app.routes.screening_secure import router as screening_router
 from app.routes.profile   import router as profile_router
 from app.routes.facility  import router as facility_router
-from app.routes.helpmum   import router as helpmum_router
+from app.routes.consultation import router as consultation_router
 from app.routes.auth      import router as auth_router
 from app.services.termii_service import close_termii_client
 
@@ -313,7 +313,7 @@ app.include_router(auth_router)  # Moved here
 app.include_router(screening_router)
 app.include_router(profile_router)
 app.include_router(facility_router)
-app.include_router(helpmum_router)
+app.include_router(consultation_router)
 
 
 @app.get("/")

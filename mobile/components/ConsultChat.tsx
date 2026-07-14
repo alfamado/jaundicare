@@ -163,7 +163,7 @@
 //       </View>
 
 //       <Text style={s.disclaimer}>
-//         Powered by HelpMum AI. Not a substitute for professional medical advice.
+//         JaundiCare guidance is educational and not a substitute for professional medical advice.
 //       </Text>
 //     </KeyboardAvoidingView>
 //   );
@@ -387,7 +387,7 @@
 //       </View>
 
 //       <Text style={s.disclaimer}>
-//         Powered by HelpMum AI. Not a substitute for professional medical advice.
+//         JaundiCare guidance is educational and not a substitute for professional medical advice.
 //       </Text>
 //     </KeyboardAvoidingView>
 //   );
@@ -639,7 +639,7 @@ export function ConsultChat({
       </View>
 
       <Text style={s.disclaimer}>
-        Powered by HelpMum AI. Not a substitute for professional medical advice.
+        JaundiCare guidance is educational and does not replace professional medical advice.
       </Text>
     </KeyboardAvoidingView>
   );

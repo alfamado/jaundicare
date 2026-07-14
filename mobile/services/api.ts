@@ -597,9 +597,11 @@ export const screeningApi = {
 export const facilityApi = {
   recommend: async (params: {
     state?: string;
+    lga?: string;
     lat?: number;
     lon?: number;
     triage_level?: string;
+    preference?: "nearest" | "government" | "clinic";
   }): Promise<Facility[]> => {
     const { data } = await api.get("/facilities/recommend", { params });
     return data.facilities || [];

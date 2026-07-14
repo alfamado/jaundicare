@@ -454,6 +454,7 @@ from app.services.cloudinary_service import delete_image
 from app.services.termii_service import (
     DemoOtpConfigurationError,
     format_phone_ng,
+    get_demo_account_role,
     get_demo_otp_for_phone,
     is_demo_mode,
     send_otp_sms,
@@ -729,12 +730,20 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
     user = db.query(User).filter(User.phone_number == phone).first()
     is_new_user = False
 
+    try:
+        requested_demo_role = get_demo_account_role(phone)
+    except DemoOtpConfigurationError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Presentation authentication is not configured correctly.",
+        )
+
     if not user:
         is_new_user = True
         user = User(
             phone_number=phone,
             is_verified=True,
-            role=UserRole.parent.value,
+            role=requested_demo_role,
             language=otp_record.language or "en",
             created_at=now,
             last_login=now
@@ -743,6 +752,10 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
     else:
         user.is_verified = True
         user.last_login = now
+        # A demo account can be intentionally reclassified between rehearsal
+        # runs. This branch is unreachable in normal Termii delivery mode.
+        if is_demo_mode():
+            user.role = requested_demo_role
 
     db.commit()
     db.refresh(user)

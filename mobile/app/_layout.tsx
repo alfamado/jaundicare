@@ -532,6 +532,10 @@ export default function RootLayout() {
         <Stack.Screen name="auth/phone" />
         <Stack.Screen name="auth/otp" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="facilities"
+          options={{ animation: "slide_from_right" }}
+        />
 
         {/* Clinical Overlays Configured as Focused Modals */}
         <Stack.Screen 

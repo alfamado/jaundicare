@@ -279,7 +279,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, RefreshControl,
 } from "react-native";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -404,6 +404,19 @@ export default function DashboardScreen() {
           <Text style={s.primaryBtnText}>{t("dashboard.start_check")}</Text>
         </TouchableOpacity>
 
+        <View style={s.quickActionRow}>
+          <TouchableOpacity style={s.quickAction} onPress={() => router.push("/facilities" as Href)}>
+            <Ionicons name="location-outline" size={19} color={Colors.coral} />
+            <Text style={s.quickActionTitle}>Find care nearby</Text>
+            <Text style={s.quickActionSub}>Directions and services</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.quickAction} onPress={() => router.push("/care")}>
+            <Ionicons name="chatbubble-ellipses-outline" size={19} color={Colors.sage} />
+            <Text style={s.quickActionTitle}>Ask MamaBot</Text>
+            <Text style={s.quickActionSub}>Simple care guidance</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Reference cards */}
         <Text style={s.sectionTitle}>{t("dashboard.how_to_check")}</Text>
 
@@ -526,6 +539,11 @@ const s = StyleSheet.create({
     ...Shadow.md,
   },
   primaryBtnText: { fontFamily: Fonts.semibold, fontSize: 15, color: "#fff" },
+
+  quickActionRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
+  quickAction: { flex: 1, backgroundColor: Colors.card, borderRadius: Radius.lg, padding: 13, borderWidth: 1, borderColor: Colors.border, ...Shadow.sm },
+  quickActionTitle: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.earth, marginTop: 8 },
+  quickActionSub: { fontFamily: Fonts.regular, fontSize: 11, color: Colors.brownLight, marginTop: 3, lineHeight: 16 },
 
   sectionTitle: { fontFamily: Fonts.semibold, fontSize: 14, color: Colors.earth, marginBottom: 10 },
 

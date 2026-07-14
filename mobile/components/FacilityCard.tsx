@@ -990,25 +990,29 @@ export const FacilityCard = React.memo(function FacilityCard({ facility: f }: Pr
   const distanceText = f.distance_km != null ? `${f.distance_km} km away` : "Distance unknown";
 
   const openMaps = async () => {
-    if (!f.latitude || !f.longitude) return;
-    
-    const scheme = Platform.select({ ios: "maps:0,0?q=", android: "geo:0,0?q=" });
+    if (f.latitude == null || f.longitude == null) return;
+
     const latLng = `${f.latitude},${f.longitude}`;
     const label = encodeURIComponent(f.name);
-    
-    const url = Platform.OS === "ios"
-      ? `${scheme}${label}@${latLng}`
-      : `${scheme}${latLng}(${label})`;
+    const nativeUrl = Platform.OS === "ios"
+      ? `maps:0,0?q=${label}@${latLng}`
+      : `geo:0,0?q=${latLng}(${label})`;
+    const browserUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(latLng)}`;
 
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert("Map Error", "No compatible map application found on this device.");
+      if (Platform.OS === "ios") {
+        const appleMapsUrl = `maps:0,0?q=${label}@${latLng}`;
+        if (await Linking.canOpenURL(appleMapsUrl)) {
+          await Linking.openURL(appleMapsUrl);
+          return;
+        }
+      } else if (await Linking.canOpenURL(nativeUrl)) {
+        await Linking.openURL(nativeUrl);
+        return;
       }
+      await Linking.openURL(browserUrl);
     } catch (err) {
-      console.error("[FacilityCard] Failed to open external mapping client:", err);
+      Alert.alert("Directions unavailable", "Could not open a maps application on this device.");
     }
   };
 
@@ -1080,7 +1084,7 @@ export const FacilityCard = React.memo(function FacilityCard({ facility: f }: Pr
             <Text style={s.callBtnText}>Call</Text>
           </TouchableOpacity>
         )}
-        {f.latitude && f.longitude && (
+        {f.latitude != null && f.longitude != null && (
           <TouchableOpacity
             style={[s.mapBtn, !f.phone && { flex: 1 }]}
             onPress={openMaps}

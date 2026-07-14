@@ -3036,6 +3036,7 @@ def load_facilities():
                         by_state_lga[(state_key, lga_key)].append(facility)
             _facilities_by_state = dict(by_state)
             _facilities_by_state_lga = dict(by_state_lga)
+            return _facilities_cache
             print(f"🌍 [FacilityService] Loaded {len(_facilities_cache)} facilities successfully.")
             return _facilities_cache
     except Exception as e:

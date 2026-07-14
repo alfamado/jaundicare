@@ -175,6 +175,29 @@ def get_demo_otp_for_phone(phone_number: str) -> str | None:
     return credentials.get(format_phone_ng(phone_number))
 
 
+def get_demo_account_role(phone_number: str) -> str:
+    """Return the role for the one explicitly configured presentation account.
+
+    This is only used when demo OTP mode is enabled. It is deliberately based
+    on a server environment variable rather than the role sent by the mobile
+    app, so a public caller cannot promote their own account.
+    """
+    if not is_demo_mode():
+        return "parent"
+
+    raw_phone = os.getenv("DEMO_HEALTH_WORKER_PHONE", "").strip()
+    if not raw_phone:
+        return "parent"
+
+    approved_phone = format_phone_ng(raw_phone)
+    if not re.fullmatch(r"234\d{10}", approved_phone):
+        raise DemoOtpConfigurationError(
+            "DEMO_HEALTH_WORKER_PHONE must be a valid Nigerian phone number."
+        )
+
+    return "health_worker" if hmac.compare_digest(approved_phone, format_phone_ng(phone_number)) else "parent"
+
+
 # The production Termii implementation is retained below. It is bypassed only
 # when OTP_DELIVERY_MODE=demo; restoring real SMS does not require a code edit.
 async def _send_otp_via_termii(phone_number: str, otp_code: str) -> bool:

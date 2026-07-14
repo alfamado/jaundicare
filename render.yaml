@@ -46,6 +46,8 @@ services:
         sync: false
       - key: DEMO_OTP_CODE_3
         sync: false
+      - key: DEMO_HEALTH_WORKER_PHONE
+        sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
@@ -56,9 +58,9 @@ services:
         sync: false
       - key: ALLOWED_HOSTS
         value: jaundicare-api.onrender.com
-      - key: HELPMUM_MAMABOT_API_KEY
+      - key: MAMABOT_API_KEY
         sync: false
-      - key: HELPMUM_VAXAI_API_KEY
+      - key: VAXAI_API_KEY
         sync: false
       - key: ENVIRONMENT
         value: production
