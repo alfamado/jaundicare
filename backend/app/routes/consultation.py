@@ -9,6 +9,7 @@ from app.services.consultation_service import (
     ask_mamabot,
     ask_vaxai,
     assistant_is_available,
+    AssistantServiceError,
 )
 
 router = APIRouter(prefix="/consult", tags=["consultation"])
@@ -52,7 +53,10 @@ async def mamabot_consult(
     _current_user: User = Depends(get_current_user),
 ):
     _ensure_available("mamabot")
-    response = await ask_mamabot(_validate_message(payload.message), payload.chat_id)
+    try:
+        response = await ask_mamabot(_validate_message(payload.message), payload.chat_id)
+    except AssistantServiceError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     return ConsultResponse(response=response, source="JaundiCare MamaBot")
 
 
@@ -62,5 +66,8 @@ async def vaxai_consult(
     _current_user: User = Depends(get_current_user),
 ):
     _ensure_available("vaxai")
-    response = await ask_vaxai(_validate_message(payload.message), payload.chat_id)
+    try:
+        response = await ask_vaxai(_validate_message(payload.message), payload.chat_id)
+    except AssistantServiceError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     return ConsultResponse(response=response, source="JaundiCare VaxAI")

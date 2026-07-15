@@ -1120,6 +1120,15 @@ export default function CHWScreen() {
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity style={s.nomogramToolBtn} onPress={() => router.push("/nomogram")}>
+            <Ionicons name="stats-chart-outline" size={18} color={Colors.sage} />
+            <View style={s.nomogramToolTextWrap}>
+              <Text style={s.toolBtnText}>Bhutani zones</Text>
+              <Text style={s.nomogramToolHint}>Plot a laboratory bilirubin result by baby's age</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.sage} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={s.addBtn} onPress={() => setShowForm(!showForm)}>
             <Ionicons name={showForm ? "close" : "add"} size={18} color="#fff" />
             <Text style={s.addBtnText}>{showForm ? "Cancel" : "Add baby"}</Text>
@@ -1182,7 +1191,10 @@ export default function CHWScreen() {
 
                     <TouchableOpacity 
                       style={s.nomogramBtn} 
-                      onPress={() => router.push(`/nomogram?hours=${ageHours || 0}`)}
+                      onPress={() => router.push({
+                        pathname: "/nomogram",
+                        params: ageHours != null ? { hours: String(ageHours) } : {},
+                      })}
                     >
                       <Ionicons name="stats-chart-outline" size={15} color={Colors.earth} />
                       <Text style={s.nomogramBtnText}>Nomogram</Text>
@@ -1220,6 +1232,13 @@ const s = StyleSheet.create({
     backgroundColor: Colors.card, padding: 12, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, ...Shadow.sm
   },
   toolBtnText: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.earth },
+  nomogramToolBtn: {
+    flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16,
+    backgroundColor: Colors.sagePale, padding: 13, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.sage,
+  },
+  nomogramToolTextWrap: { flex: 1 },
+  nomogramToolHint: { fontFamily: Fonts.regular, fontSize: 11, color: Colors.brownLight, marginTop: 2 },
   addBtn: { backgroundColor: Colors.coral, borderRadius: Radius.lg, padding: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 16 },
   addBtnText: { fontFamily: Fonts.semibold, fontSize: 15, color: "#fff" },
   formCard: { backgroundColor: Colors.card, borderRadius: Radius.lg, padding: 16, marginBottom: 16 },

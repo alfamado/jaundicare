@@ -18,6 +18,10 @@ CONSULTATION_DEMO_MODE = os.getenv("CONSULTATION_DEMO_MODE", "false").strip().lo
 TIMEOUT = 30.0
 
 
+class AssistantServiceError(RuntimeError):
+    """A configured upstream assistant could not complete a live request."""
+
+
 def assistant_is_available(assistant: str) -> bool:
     """One assistant's absent key must never block the other assistant."""
     if CONSULTATION_DEMO_MODE:
@@ -82,12 +86,20 @@ async def _ask(
             )
             response.raise_for_status()
             return response.json().get("response", f"No response received from {assistant_name}.")
-    except httpx.TimeoutException:
-        return f"{assistant_name} is taking longer than expected. Please try again in a moment."
-    except httpx.HTTPStatusError:
-        return f"{assistant_name} is currently unavailable. Please try again later."
-    except Exception:
-        return f"{assistant_name} is currently unavailable. Please try again later."
+    except httpx.TimeoutException as error:
+        raise AssistantServiceError(
+            f"{assistant_name} is taking longer than expected. Please try again in a moment."
+        ) from error
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code in {401, 403}:
+            detail = f"{assistant_name} rejected its API key. Check the Render environment variable."
+        else:
+            detail = f"{assistant_name} is currently unavailable. Please try again later."
+        raise AssistantServiceError(detail) from error
+    except httpx.RequestError as error:
+        raise AssistantServiceError(
+            f"{assistant_name} could not be reached. Check its configured endpoint."
+        ) from error
 
 
 async def ask_mamabot(message: str, chat_id: str | None = None) -> str:

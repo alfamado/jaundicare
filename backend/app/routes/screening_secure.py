@@ -54,7 +54,7 @@ async def analyze_screening(
     user_state: str | None = Form(None, max_length=50),
     user_lga: str | None = Form(None, max_length=100),
     facility_preference: Literal["nearest", "government", "clinic"] = Form("nearest"),
-    ui_language: Literal["en", "yo"] = Form("en"),
+    ui_language: Literal["en", "yo", "ha", "ig", "pcm"] = Form("en"),
     allow_training_use: bool = Form(False),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -65,11 +65,6 @@ async def analyze_screening(
     profile = profile_db.get_latest_profile(db, current_user.id)
     computed_age = profile_db.calculate_age_hours(profile) if profile else None
     resolved_age = age_hours if age_hours is not None else computed_age
-    if resolved_age is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Create a baby profile or provide the baby's age in hours.",
-        )
 
     try:
         destination = await save_upload_file(image, UPLOAD_DIR)

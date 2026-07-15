@@ -523,7 +523,9 @@ def safe_int(value, default=0):
 def run_triage(data: dict) -> tuple[str, str, list[str]]:
     notes = []
 
-    age_hours = safe_int(data.get("age_hours", 0))
+    raw_age_hours = data.get("age_hours")
+    age_is_known = isinstance(raw_age_hours, (int, float)) and not isinstance(raw_age_hours, bool)
+    age_hours = safe_int(raw_age_hours, 0)
     feeding = normalize_str(data.get("feeding"))
 
     difficult_to_wake = to_bool(data.get("difficult_to_wake"))
@@ -568,7 +570,7 @@ def run_triage(data: dict) -> tuple[str, str, list[str]]:
             notes
         )
 
-    if age_hours < 24 and yellow_sign_present:
+    if age_is_known and age_hours < 24 and yellow_sign_present:
         return (
             "RED",
             "Possible jaundice signs within the first 24 hours need urgent assessment.",
@@ -587,6 +589,19 @@ def run_triage(data: dict) -> tuple[str, str, list[str]]:
             "RED",
             "Poor feeding with worsening jaundice signs needs urgent assessment.",
             notes
+        )
+
+    # A screening may still be useful before a parent records the birth time,
+    # but it must not provide low-risk reassurance because the first-24-hours
+    # rule cannot be checked. The stronger danger signs above still win.
+    if not age_is_known:
+        notes.append(
+            "Baby's age was not recorded, so the first-24-hours risk rule could not be checked."
+        )
+        return (
+            "AMBER",
+            "Baby's age is unknown. Please arrange a same-day assessment and add the birth details when you can.",
+            notes,
         )
 
     if poor_feeding:

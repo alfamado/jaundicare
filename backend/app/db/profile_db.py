@@ -65,7 +65,7 @@ def profile_to_dict(profile, age_hours):
 
     return {
         "exists":                True,
-        "id":                    profile.id,
+        "id":                    str(profile.id),
         "baby_name":             profile.baby_name,
         "parent_name":           profile.parent_name,
         "date_of_birth":         profile.date_of_birth,

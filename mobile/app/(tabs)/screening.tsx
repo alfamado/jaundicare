@@ -11042,7 +11042,7 @@ import NetInfo from "@react-native-community/netinfo";
 import {      
   View, Text, ScrollView, TouchableOpacity, Alert,
   StyleSheet, ActivityIndicator, Image,      
-  Switch, Modal, FlatList,      
+  Switch, Modal, FlatList, TextInput,
 } from "react-native";      
 import { SafeAreaView } from "react-native-safe-area-context";      
 import { router } from "expo-router";
@@ -11178,6 +11178,8 @@ export default function ScreeningScreen() {
   const [result,      setResult]      = useState<ScreeningResult | null>(null);      
   const [showStatePicker, setShowStatePicker] = useState(false);      
   const [showLgaPicker,   setShowLgaPicker]   = useState(false);      
+  const [showAgeEntry, setShowAgeEntry] = useState(false);
+  const [manualAgeDays, setManualAgeDays] = useState("");
   const [symptoms, setSymptoms] = useState<Record<string, boolean>>({      
     hard_to_wake:         false,      
     jaundice_first_24h:   false,      
@@ -11279,13 +11281,13 @@ export default function ScreeningScreen() {
     }      
   };
 
-  const submit = async () => {      
-    if (!profile?.exists) {
+  const submit = async (ageOverrideHours: number | null | undefined = undefined) => {
+    if (!profile?.exists && ageOverrideHours === undefined) {
       Alert.alert(
-        "Add baby's birth details",
-        "We need the date and time of birth to give safe newborn guidance.",
+        "Tell us baby's age",
+        "If you know it, enter age in days for this screening. Adding birth details later will save it to the baby's profile.",
         [
-          { text: "Not now", style: "cancel" },
+          { text: "Not now", style: "cancel", onPress: () => setShowAgeEntry(true) },
           { text: "Add details", onPress: () => router.push("/(tabs)/profile") },
         ],
       );
@@ -11303,7 +11305,9 @@ export default function ScreeningScreen() {
     setLoading(true);      
     setResult(null);
 
-    const ageHours  = profile?.age_hours ?? undefined;      
+    const ageHours = ageOverrideHours === undefined
+      ? (profile?.age_hours ?? undefined)
+      : (ageOverrideHours ?? undefined);
     const hasGPS    = location.latitude != null && location.longitude != null;      
     const expanded  = expandSymptoms();      
     const apiPayload = {      
@@ -11471,6 +11475,22 @@ export default function ScreeningScreen() {
       yellow_gums_palms: false,      
       darker_skin: false,      
     });      
+  };
+
+  const continueWithManualAge = () => {
+    const days = Number(manualAgeDays.trim().replace(",", "."));
+    if (!Number.isFinite(days) || days < 0 || days > 28) {
+      Alert.alert("Enter baby's age", "Please enter a number from 0 to 28 days.");
+      return;
+    }
+
+    setShowAgeEntry(false);
+    void submit(Math.round(days * 24));
+  };
+
+  const continueWithoutAge = () => {
+    setShowAgeEntry(false);
+    void submit(null);
   };
 
   const withdrawLatestTrainingConsent = () => {
@@ -11810,7 +11830,7 @@ export default function ScreeningScreen() {
             {/* Submit Button */}      
             <TouchableOpacity      
               style={[s.submitBtn, (loading || compressing || !imageUri || !feeding) && { opacity: 0.55 }]}      
-              onPress={submit}      
+              onPress={() => { void submit(); }}
               disabled={loading || compressing || !imageUri || !feeding}      
             >      
               {loading ? (      
@@ -11833,6 +11853,44 @@ export default function ScreeningScreen() {
           </>      
         )}      
       </ScrollView>  
+
+      <Modal
+        visible={showAgeEntry}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAgeEntry(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalBox}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Baby's age</Text>
+              <TouchableOpacity onPress={() => setShowAgeEntry(false)}>
+                <Ionicons name="close" size={24} color={Colors.earth} />
+              </TouchableOpacity>
+            </View>
+            <View style={s.ageModalContent}>
+              <Text style={s.ageModalHint}>
+                Enter baby's age in days for this screening only. For example, 2 means 48 hours.
+              </Text>
+              <TextInput
+                style={s.ageInput}
+                value={manualAgeDays}
+                onChangeText={setManualAgeDays}
+                keyboardType="decimal-pad"
+                placeholder="e.g. 2"
+                placeholderTextColor={Colors.brownLight}
+                accessibilityLabel="Baby age in days"
+              />
+              <TouchableOpacity style={s.ageContinueButton} onPress={continueWithManualAge}>
+                <Text style={s.ageContinueButtonText}>Continue screening</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.ageSkipButton} onPress={continueWithoutAge}>
+                <Text style={s.ageSkipButtonText}>I don't know baby's age</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* State picker modal */}      
       <Modal visible={showStatePicker} animationType="slide" transparent>      
@@ -12171,6 +12229,16 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.border,      
   },      
   modalItemSelected:     { backgroundColor: "#fff5f2" },      
-  modalItemText:         { fontFamily: Fonts.medium, fontSize: 15, color: Colors.earth },      
-  modalItemTextSelected: { color: Colors.coral, fontFamily: Fonts.semibold },      
+  modalItemText:         { fontFamily: Fonts.medium, fontSize: 15, color: Colors.earth },
+  modalItemTextSelected: { color: Colors.coral, fontFamily: Fonts.semibold },
+  ageModalContent: { padding: 16, gap: 12 },
+  ageModalHint: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 20, color: Colors.brownLight },
+  ageInput: {
+    backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.md, padding: 12, fontFamily: Fonts.regular, fontSize: 15, color: Colors.earth,
+  },
+  ageContinueButton: { backgroundColor: Colors.coral, borderRadius: Radius.md, padding: 13, alignItems: "center" },
+  ageContinueButtonText: { fontFamily: Fonts.semibold, fontSize: 14, color: "#fff" },
+  ageSkipButton: { alignItems: "center", paddingVertical: 10 },
+  ageSkipButtonText: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.brownLight },
 });

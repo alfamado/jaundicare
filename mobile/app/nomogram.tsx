@@ -313,9 +313,10 @@
 
 
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { NomogramChart } from "../components/NomogramChart";
 import { getBhutaniZone } from "../constants/bhutaniZones";
@@ -324,10 +325,21 @@ import { useAppStore } from "../store/appStore"; // Natively integrate global st
 
 export default function NomogramScreen() {
   const profile = useAppStore((s: any) => s.profile); // Pull down current infant metrics if initialized
-  const [ageHours, setAgeHours] = useState("");
+  const { hours } = useLocalSearchParams<{ hours?: string | string[] }>();
+  const routeHours = Array.isArray(hours) ? hours[0] : hours;
+  const routeAgeHours = typeof routeHours === "string" ? routeHours.trim().replace(",", ".") : "";
+  const hasRouteAge = /^\d+(?:\.\d+)?$/.test(routeAgeHours) && Number(routeAgeHours) >= 0;
+  const [ageHours, setAgeHours] = useState(() => hasRouteAge ? routeAgeHours : "");
   const [tsb, setTsb]           = useState("");
   const [result, setResult]     = useState<ReturnType<typeof getBhutaniZone> | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasRouteAge) return;
+    setAgeHours(routeAgeHours);
+    setResult(null);
+    setValidationError(null);
+  }, [hasRouteAge, routeAgeHours]);
 
   const calculate = () => {
     setValidationError(null);
