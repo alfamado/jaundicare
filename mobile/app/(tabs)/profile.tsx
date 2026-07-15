@@ -382,7 +382,7 @@ export default function ProfileScreen() {
       Alert.alert(
         t("common.error"),
         err?.response?.data?.detail
-          ?? "We could not save the baby profile. Please try again while connected.",
+          ?? "We could not reach the JaundiCare server. Your baby profile was not saved. Please try again.",
       );
     },
   });

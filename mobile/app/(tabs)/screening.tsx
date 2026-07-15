@@ -11038,6 +11038,7 @@
 
 import React, { useState, useEffect, useRef } from "react";      
 import axios from "axios";
+import NetInfo from "@react-native-community/netinfo";
 import {      
   View, Text, ScrollView, TouchableOpacity, Alert,
   StyleSheet, ActivityIndicator, Image,      
@@ -11351,7 +11352,24 @@ export default function ScreeningScreen() {
         return;
       }
 
-      console.log("[Screening] Network unavailable, using local safety fallback.");
+      const networkState = await NetInfo.fetch();
+      const deviceIsOffline =
+        networkState.isConnected === false || networkState.isInternetReachable === false;
+
+      // A timeout, server wake-up, or failed API connection while the phone
+      // still has internet must never be misrepresented as an offline result.
+      if (!deviceIsOffline) {
+        if (isComponentActive.current) {
+          showToast(
+            axios.isAxiosError(err) && (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT")
+              ? "The screening server is taking too long. Please try again; this result was not saved offline."
+              : "We could not reach the screening server. Please try again; this result was not saved offline.",
+          );
+        }
+        return;
+      }
+
+      console.log("[Screening] Device is offline, using local safety fallback.");
            
       try {      
         const [localPredictions, symptomSafety] = await Promise.all([

@@ -979,6 +979,7 @@ export default function CareScreen() {
             </TouchableOpacity>
           </View>
           <ConsultChat
+            key={chatConfig.endpoint}
             {...chatConfig}
           />
         </View>

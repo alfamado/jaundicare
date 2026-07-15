@@ -397,7 +397,9 @@ async function refreshTokensOnce(): Promise<RefreshedTokens> {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30s — image uploads need more time on slow Nigerian networks
+  // Render may need time to wake and load the clinical model. A timeout is a
+  // server delay, not proof that the phone is offline.
+  timeout: 90000,
 });
 
 // ── Interceptors (Production Auth & Auto-Refresh Routing) ───────

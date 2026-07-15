@@ -191,7 +191,10 @@ export default function PhoneScreen() {
 
   // Safely inherit local user configuration options from the Zustand state layer
   const currentLanguage = useAppStore((s) => s.language) || "en";
-  const onboardingRole = useAppStore((s) => s.onboarded) ? "parent" : "parent"; // Map to system defaults if needed
+  // The API accepts this selection only in its restricted presentation OTP
+  // mode. In ordinary delivery mode the server rejects self-assigned
+  // health-worker access and keeps public accounts as parents.
+  const onboardingRole = useAppStore((s) => s.role) ?? "parent";
 
   const formatDisplay = (value: string) => {
     const digits = value.replace(/\D/g, "");

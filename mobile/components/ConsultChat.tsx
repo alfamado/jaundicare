@@ -476,6 +476,10 @@ export function ConsultChat({
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const listRef = useRef<FlatList>(null);
+  // Keep the same upstream session for the life of this conversation.
+  const chatIdRef = useRef(
+    `${endpoint}_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`,
+  );
 
   const send = async (text: string) => {
     const trimmedText = text.trim();
@@ -501,7 +505,7 @@ export function ConsultChat({
     try {
       const { data } = await api.post(
         `/consult/${endpoint}`,
-        { message: trimmedText },
+        { message: trimmedText, chat_id: chatIdRef.current },
         { signal: controller.signal },
       );
       

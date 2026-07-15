@@ -64,9 +64,11 @@ TERMII_BASE_URL              required only for live SMS delivery
 TERMII_SENDER_ID             approved sender ID for live SMS delivery
 CORS_ALLOWED_ORIGINS         exact allowed browser origin(s), comma-separated
 ALLOWED_HOSTS                Render API hostname
-MAMABOT_API_KEY              required for MamaBot responses
-VAXAI_API_KEY                required for VaxAI responses
-CONSULTATION_DEMO_MODE       set true only for the clearly labelled presentation fallback
+MAMABOT_API_KEY              required for live MamaBot responses
+VAXAI_API_KEY                required for live VaxAI responses
+MAMABOT_URL                  optional override for MamaBot endpoint
+VAXAI_URL                    optional override for VaxAI endpoint
+CONSULTATION_DEMO_MODE       keep false when using the live assistants
 ```
 
 Use `https://your-service.onrender.com` as the mobile API URL. A native Android app does not need CORS, but any deployed browser frontend must be added to `CORS_ALLOWED_ORIGINS` exactly.
@@ -89,13 +91,12 @@ DEMO_OTP_CODE_2=234567
 DEMO_ALLOWED_PHONE_3=2348012345680
 DEMO_OTP_CODE_3=345678
 
-DEMO_HEALTH_WORKER_PHONE=2348012345678
-CONSULTATION_DEMO_MODE=true
+CONSULTATION_DEMO_MODE=false
 ```
 
 Replace the sample values. Each phone must be `234` followed by ten digits: no `+`, spaces, or leading zero. Use a different six-digit code for each phone.
 
-The number in `DEMO_HEALTH_WORKER_PHONE` must exactly match one of the three allowed numbers. That phone receives the Community Care interface after OTP verification; the other two remain parent accounts. Selecting a role in the app never grants that permission on its own.
+Each approved phone may rehearse either interface: choose Parent or Community Care during onboarding before requesting the code. That switch is accepted only while the restricted presentation OTP mode is active; normal live-SMS registration remains parent-only unless an administrator provisions a health-worker account.
 
 When live SMS is ready, restore:
 
@@ -103,7 +104,6 @@ When live SMS is ready, restore:
 ENVIRONMENT=production
 OTP_DELIVERY_MODE=termii
 DEMO_AUTH_ENABLED=false
-DEMO_HEALTH_WORKER_PHONE=
 CONSULTATION_DEMO_MODE=false
 ```
 

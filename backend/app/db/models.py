@@ -488,6 +488,9 @@ class OtpCode(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     phone_number = Column(String(20), nullable=False, index=True)
     language = Column(String(5), default="en", nullable=False)
+    # Used only while the tightly allow-listed presentation OTP mode is active.
+    # In normal delivery mode, every public sign-in remains a parent account.
+    requested_role = Column(String(20), default=UserRole.parent.value, nullable=False)
     code_hash = Column(String(255), nullable=False) 
     expires_at = Column(DateTime, nullable=False, index=True) # Indexed to allow fast cron-job cleanups of expired codes
     is_used = Column(Boolean, default=False, nullable=False)

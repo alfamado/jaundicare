@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MAMABOT_URL = "https://d2g5avlpkj63xl.cloudfront.net/chat"
-VAXAI_URL = "https://d1vis8hpx6u9q0.cloudfront.net/chat"
+MAMABOT_URL = os.getenv("MAMABOT_URL", "https://d2g5avlpkj63xl.cloudfront.net/chat")
+VAXAI_URL = os.getenv("VAXAI_URL", "https://d1vis8hpx6u9q0.cloudfront.net/chat")
 MAMABOT_API_KEY = os.getenv("MAMABOT_API_KEY")
 VAXAI_API_KEY = os.getenv("VAXAI_API_KEY")
 CONSULTATION_DEMO_MODE = os.getenv("CONSULTATION_DEMO_MODE", "false").strip().lower() in {
@@ -66,13 +66,19 @@ def _demo_response(assistant: str, message: str) -> str:
     return f"Demo guidance: {guidance} This does not replace a health professional."
 
 
-async def _ask(url: str, api_key: str | None, message: str, assistant_name: str) -> str:
+async def _ask(
+    url: str,
+    api_key: str | None,
+    message: str,
+    assistant_name: str,
+    chat_id: str | None,
+) -> str:
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.post(
                 url,
                 headers={"X-API-KEY": api_key or "", "Content-Type": "application/json"},
-                json={"message": message, "chat_id": str(uuid.uuid4())},
+                json={"message": message, "chat_id": chat_id or str(uuid.uuid4())},
             )
             response.raise_for_status()
             return response.json().get("response", f"No response received from {assistant_name}.")
@@ -84,13 +90,13 @@ async def _ask(url: str, api_key: str | None, message: str, assistant_name: str)
         return f"{assistant_name} is currently unavailable. Please try again later."
 
 
-async def ask_mamabot(message: str) -> str:
+async def ask_mamabot(message: str, chat_id: str | None = None) -> str:
     if not MAMABOT_API_KEY and CONSULTATION_DEMO_MODE:
         return _demo_response("mamabot", message)
-    return await _ask(MAMABOT_URL, MAMABOT_API_KEY, message, "MamaBot")
+    return await _ask(MAMABOT_URL, MAMABOT_API_KEY, message, "MamaBot", chat_id)
 
 
-async def ask_vaxai(message: str) -> str:
+async def ask_vaxai(message: str, chat_id: str | None = None) -> str:
     if not VAXAI_API_KEY and CONSULTATION_DEMO_MODE:
         return _demo_response("vaxai", message)
-    return await _ask(VAXAI_URL, VAXAI_API_KEY, message, "VaxAI")
+    return await _ask(VAXAI_URL, VAXAI_API_KEY, message, "VaxAI", chat_id)
