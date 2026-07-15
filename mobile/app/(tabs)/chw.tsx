@@ -1109,12 +1109,12 @@ export default function CHWScreen() {
 
           {/* GLOBAL TOOLS: Restructured paths to target the root Stack layout maps explicitly */}
           <View style={s.toolkitRow}>
-            <TouchableOpacity style={s.toolBtn} onPress={() => router.push("./analytics")}>
+            <TouchableOpacity style={s.toolBtn} onPress={() => router.push("/analytics")}>
               <Ionicons name="analytics-outline" size={16} color={Colors.earth} />
               <Text style={s.toolBtnText}>Analytics</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.toolBtn} onPress={() => router.push("./care")}>
+            <TouchableOpacity style={s.toolBtn} onPress={() => router.push("/care")}>
               <Ionicons name="book-outline" size={16} color={Colors.earth} />
               <Text style={s.toolBtnText}>Care Guide</Text>
             </TouchableOpacity>
@@ -1182,7 +1182,7 @@ export default function CHWScreen() {
 
                     <TouchableOpacity 
                       style={s.nomogramBtn} 
-                      onPress={() => router.push(`./nomogram?hours=${ageHours || 0}`)}
+                      onPress={() => router.push(`/nomogram?hours=${ageHours || 0}`)}
                     >
                       <Ionicons name="stats-chart-outline" size={15} color={Colors.earth} />
                       <Text style={s.nomogramBtnText}>Nomogram</Text>

@@ -11037,16 +11037,20 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";      
+import axios from "axios";
 import {      
   View, Text, ScrollView, TouchableOpacity, Alert,
   StyleSheet, ActivityIndicator, Image,      
   Switch, Modal, FlatList,      
 } from "react-native";      
 import { SafeAreaView } from "react-native-safe-area-context";      
+import { router } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";      
 import * as ImageManipulator from "expo-image-manipulator";      
 import { Ionicons } from "@expo/vector-icons";      
 import { useAppStore } from "../../store/appStore";      
+import { useProfile } from "../../hooks/useProfile";
 import { screeningApi, type ScreeningResult } from "../../services/api";      
 import { saveScreeningOffline } from "../../services/offlineStoreSecure";
 import { useLocation } from "../../hooks/useLocation";      
@@ -11152,9 +11156,10 @@ const FACILITY_PREFERENCES = [
 ];
 
 export default function ScreeningScreen() {      
-  const profile       = useAppStore((s) => s.profile);      
   const setLastResult = useAppStore((s) => s.setLastScreening);      
   const storeFollowUp = useAppStore((s) => s.storeFollowUpData);
+  const { profile, isLoading: profileLoading } = useProfile();
+  const queryClient = useQueryClient();
 
   const { t, language } = useTranslations();  
   const { location, requestLocation } = useLocation();      
@@ -11274,6 +11279,17 @@ export default function ScreeningScreen() {
   };
 
   const submit = async () => {      
+    if (!profile?.exists) {
+      Alert.alert(
+        "Add baby's birth details",
+        "We need the date and time of birth to give safe newborn guidance.",
+        [
+          { text: "Not now", style: "cancel" },
+          { text: "Add details", onPress: () => router.push("/(tabs)/profile") },
+        ],
+      );
+      return;
+    }
     if (!imageUri) {      
       showToast(t("error.photo_required") === "error.photo_required" ? "Please take or choose a photo first." : t("error.photo_required"));      
       return;      
@@ -11321,8 +11337,21 @@ export default function ScreeningScreen() {
       setResult(data);      
       setLastResult(data);      
       storeFollowUp(data.final_decision);      
+      await queryClient.invalidateQueries({ queryKey: ["history"] });
     } catch (err: any) {      
-      console.log("[Screening] Server evaluation error, switching to localized edge inference model...");      
+      // A real API response is not an offline event. Show it clearly instead
+      // of masking a server problem with an offline result.
+      if (axios.isAxiosError(err) && err.response) {
+        if (isComponentActive.current) {
+          showToast(
+            err.response.data?.detail
+              ?? "The screening service could not complete this request. Please try again.",
+          );
+        }
+        return;
+      }
+
+      console.log("[Screening] Network unavailable, using local safety fallback.");
            
       try {      
         const [localPredictions, symptomSafety] = await Promise.all([
@@ -11456,11 +11485,26 @@ export default function ScreeningScreen() {
   };
 
   const lgaOptions = state ? (LGA_DATA[state] ?? []) : [];      
+  const profilePrompt = !profile?.exists && !profileLoading ? (
+    <View style={s.profileRequiredCard}>
+      <Ionicons name="calendar-outline" size={22} color={Colors.coral} />
+      <View style={s.profileRequiredCopy}>
+        <Text style={s.profileRequiredTitle}>Start with baby's birth details</Text>
+        <Text style={s.profileRequiredText}>
+          Add the date and time of birth once so every screening can give safer guidance.
+        </Text>
+      </View>
+      <TouchableOpacity style={s.profileRequiredButton} onPress={() => router.push("/(tabs)/profile")}>
+        <Text style={s.profileRequiredButtonText}>Add</Text>
+      </TouchableOpacity>
+    </View>
+  ) : null;
 
   return (      
     <SafeAreaView style={s.safe}>      
       <ScrollView style={s.scroll} contentContainerStyle={s.content}>      
         <Text style={s.heading}>{t("screening.title") === "screening.title" ? "Baby Screening" : t("screening.title")}</Text>  
+        {profilePrompt}
 
         {result ? (      
           <>      
@@ -11857,6 +11901,13 @@ const s = StyleSheet.create({
   scroll:  { flex: 1 },      
   content: { padding: 16, paddingBottom: 40 },      
   heading: { fontFamily: Fonts.bold, fontSize: 22, color: Colors.earth, marginBottom: 16 },  
+
+  profileRequiredCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.amberPale, borderRadius: Radius.lg, padding: 13, marginBottom: 14, borderWidth: 1, borderColor: Colors.amber },
+  profileRequiredCopy: { flex: 1 },
+  profileRequiredTitle: { fontFamily: Fonts.semibold, fontSize: 13, color: Colors.earth, marginBottom: 2 },
+  profileRequiredText: { fontFamily: Fonts.regular, fontSize: 11, color: Colors.brown, lineHeight: 16 },
+  profileRequiredButton: { backgroundColor: Colors.coral, borderRadius: Radius.md, paddingHorizontal: 11, paddingVertical: 8 },
+  profileRequiredButtonText: { fontFamily: Fonts.semibold, fontSize: 12, color: "#fff" },
 
   card: {      
     backgroundColor: Colors.card,      

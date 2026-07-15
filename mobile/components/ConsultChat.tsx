@@ -519,14 +519,17 @@ export function ConsultChat({
       clearTimeout(timeoutId);
       
       const isTimeout = err.name === "AbortError";
+      const serverDetail = err?.response?.data?.detail;
       setMessages((prev) => [
         ...prev,
         {
           id:        `err_${Date.now()}`,
           role:      "assistant",
           text:      isTimeout 
-            ? "Request timed out. Please verify connectivity or switch to offline mode and try again."
-            : "Could not reach the assistant. Please check your network context and try again.",
+            ? "The assistant took too long to reply. Please try again."
+            : serverDetail
+              ? `Assistant unavailable: ${serverDetail}`
+              : "Could not reach the assistant. Please check your connection and try again.",
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -586,7 +589,7 @@ export function ConsultChat({
   return (
     <KeyboardAvoidingView
       style={s.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       {renderHeader}
@@ -612,6 +615,8 @@ export function ConsultChat({
         }
         contentContainerStyle={s.messagesContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         onContentSizeChange={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
         onLayout={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
         removeClippedSubviews={Platform.OS === "android"} // Memory optimization barrier
@@ -627,6 +632,7 @@ export function ConsultChat({
           placeholderTextColor={Colors.brownLight}
           multiline
           maxLength={500}
+          onFocus={() => listRef.current?.scrollToEnd({ animated: true })}
         />
         <TouchableOpacity
           style={[s.sendBtn, { backgroundColor: accentColor }, (!input.trim() || loading) && { opacity: 0.5 }]}

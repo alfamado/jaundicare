@@ -691,11 +691,6 @@ export default function HistoryScreen() {
                 ? t("status.same_day")
                 : t("status.monitor");
 
-            const raw = item.image_confidence;
-            const pct = raw != null
-              ? (raw > 1 ? raw.toFixed(1) : (raw * 100).toFixed(1))
-              : null;
-
             const ageHours = item.baby_age_hours;
             const ageDays  = ageHours != null ? Math.floor(ageHours / 24) : null;
             const ageStr = ageDays != null
@@ -747,17 +742,6 @@ export default function HistoryScreen() {
                   <View style={s.metaRow}>
                     <Ionicons name="person-outline" size={12} color={Colors.brownLight} />
                     <Text style={s.metaText}>{ageStr}</Text>
-                  </View>
-                )}
-
-                {(item.image_prediction || pct) && (
-                  <View style={s.predRow}>
-                    {item.image_prediction && (
-                      <Text style={s.predLabel}>
-                        {item.image_prediction.charAt(0).toUpperCase() + item.image_prediction.slice(1)}
-                      </Text>
-                    )}
-                    {pct && <Text style={s.predConf}>{pct}% {t("hw_labels.confidence")}</Text>}
                   </View>
                 )}
 

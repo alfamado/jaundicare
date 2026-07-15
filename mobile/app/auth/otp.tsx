@@ -339,7 +339,9 @@ export default function OTPScreen() {
 
       await login(data);
 
-      router.replace(onboardingComplete ? "/(tabs)" : "/onboarding");
+      router.replace(
+        data.role === "health_worker" ? "/(tabs)/chw" : "/(tabs)/screening",
+      );
     } catch {
       setError(t("ui.auth.network_error"));
       setCode("");

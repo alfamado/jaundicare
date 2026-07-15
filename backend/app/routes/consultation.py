@@ -5,7 +5,11 @@ from pydantic import BaseModel
 
 from app.db.models import User
 from app.services.auth_middleware import get_current_user
-from app.services.consultation_service import ask_mamabot, ask_vaxai, consultations_are_configured
+from app.services.consultation_service import (
+    ask_mamabot,
+    ask_vaxai,
+    assistant_is_available,
+)
 
 router = APIRouter(prefix="/consult", tags=["consultation"])
 
@@ -26,9 +30,15 @@ def _validate_message(message: str) -> str:
     return cleaned
 
 
-def _ensure_configured() -> None:
-    if not consultations_are_configured():
-        raise HTTPException(status_code=503, detail="Consultation service is not configured.")
+def _ensure_available(assistant: str) -> None:
+    if not assistant_is_available(assistant):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"{assistant.title()} is not configured. Add its API key in Render or enable "
+                "CONSULTATION_DEMO_MODE for the presentation demo."
+            ),
+        )
 
 
 @router.post("/mamabot", response_model=ConsultResponse)
@@ -36,7 +46,7 @@ async def mamabot_consult(
     payload: ConsultRequest,
     _current_user: User = Depends(get_current_user),
 ):
-    _ensure_configured()
+    _ensure_available("mamabot")
     response = await ask_mamabot(_validate_message(payload.message))
     return ConsultResponse(response=response, source="JaundiCare MamaBot")
 
@@ -46,6 +56,6 @@ async def vaxai_consult(
     payload: ConsultRequest,
     _current_user: User = Depends(get_current_user),
 ):
-    _ensure_configured()
+    _ensure_available("vaxai")
     response = await ask_vaxai(_validate_message(payload.message))
     return ConsultResponse(response=response, source="JaundiCare VaxAI")

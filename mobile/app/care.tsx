@@ -824,10 +824,12 @@ const SECTIONS = {
 };
 
 type SectionKey = keyof typeof SECTIONS;
+type AssistantKey = "mamabot" | "vaxai";
 
 export default function CareScreen() {
   const { t } = useTranslations();
   const [activeSection, setActiveSection] = useState<SectionKey>("warning");
+  const [activeAssistant, setActiveAssistant] = useState<AssistantKey>("mamabot");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const sections = {
@@ -882,6 +884,31 @@ export default function CareScreen() {
 
   const isChatActive = activeSection === "ask_bot";
   const section = sections[activeSection === "ask_bot" ? "warning" : activeSection];
+  const chatConfig = activeAssistant === "mamabot"
+    ? {
+        endpoint: "mamabot" as const,
+        title: "MamaBot Consultation",
+        subtitle: "Ask about breastfeeding, jaundice warning signs, and newborn care.",
+        placeholder: "Type your newborn-care question...",
+        accentColor: Colors.coral,
+        suggestedQuestions: [
+          "How often should I breastfeed my newborn baby?",
+          "My baby is still yellow on day 5, what should I do?",
+          "Is it safe to give glucose water to clear yellow skin?",
+        ],
+      }
+    : {
+        endpoint: "vaxai" as const,
+        title: "VaxAI Immunisation Guide",
+        subtitle: "Ask about newborn immunisation visits and vaccine schedules.",
+        placeholder: "Type your immunisation question...",
+        accentColor: Colors.sage,
+        suggestedQuestions: [
+          "What vaccines are due for a baby at birth in Nigeria?",
+          "What immunisations does a 6-week-old infant require?",
+          "When should I take the immunisation card to the clinic?",
+        ],
+      };
   
   const filtered = section.items.filter(
     (item) =>
@@ -935,17 +962,24 @@ export default function CareScreen() {
       <View style={s.viewportStack}>
         {/* Chat Layer Container */}
         <View style={[s.layerContainer, isChatActive ? s.visibleLayer : s.hiddenLayer]}>
+          <View style={s.assistantPicker}>
+            <TouchableOpacity
+              style={[s.assistantButton, activeAssistant === "mamabot" && s.assistantButtonActive]}
+              onPress={() => setActiveAssistant("mamabot")}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={15} color={activeAssistant === "mamabot" ? Colors.coral : Colors.brownLight} />
+              <Text style={[s.assistantButtonText, activeAssistant === "mamabot" && { color: Colors.coral }]}>MamaBot</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.assistantButton, activeAssistant === "vaxai" && s.assistantButtonActive]}
+              onPress={() => setActiveAssistant("vaxai")}
+            >
+              <Ionicons name="shield-checkmark-outline" size={15} color={activeAssistant === "vaxai" ? Colors.sage : Colors.brownLight} />
+              <Text style={[s.assistantButtonText, activeAssistant === "vaxai" && { color: Colors.sage }]}>VaxAI</Text>
+            </TouchableOpacity>
+          </View>
           <ConsultChat
-            endpoint="mamabot"
-            title="MamaBot Consultation"
-            subtitle="Ask questions about breastfeeding, jaundice warning signs, and newborn behaviors."
-            placeholder="Type your question here..."
-            accentColor={Colors.coral}
-            suggestedQuestions={[
-              "How often should I breastfeed my newborn baby?",
-              "My baby is still yellow on day 5, what should I do?",
-              "Is it safe to give glucose water to clear yellow skin?"
-            ]}
+            {...chatConfig}
           />
         </View>
 
@@ -1008,6 +1042,10 @@ const s = StyleSheet.create({
   layerContainer: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
   visibleLayer: { display: "flex", opacity: 1, zIndex: 1 },
   hiddenLayer: { display: "none", opacity: 0, zIndex: -1 },
+  assistantPicker: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 10, backgroundColor: Colors.background },
+  assistantButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, backgroundColor: Colors.card },
+  assistantButtonActive: { borderColor: Colors.coral, backgroundColor: Colors.cream },
+  assistantButtonText: { fontFamily: Fonts.semibold, fontSize: 12, color: Colors.brownLight },
 
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },

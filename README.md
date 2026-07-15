@@ -66,6 +66,7 @@ CORS_ALLOWED_ORIGINS         exact allowed browser origin(s), comma-separated
 ALLOWED_HOSTS                Render API hostname
 MAMABOT_API_KEY              required for MamaBot responses
 VAXAI_API_KEY                required for VaxAI responses
+CONSULTATION_DEMO_MODE       set true only for the clearly labelled presentation fallback
 ```
 
 Use `https://your-service.onrender.com` as the mobile API URL. A native Android app does not need CORS, but any deployed browser frontend must be added to `CORS_ALLOWED_ORIGINS` exactly.
@@ -89,6 +90,7 @@ DEMO_ALLOWED_PHONE_3=2348012345680
 DEMO_OTP_CODE_3=345678
 
 DEMO_HEALTH_WORKER_PHONE=2348012345678
+CONSULTATION_DEMO_MODE=true
 ```
 
 Replace the sample values. Each phone must be `234` followed by ten digits: no `+`, spaces, or leading zero. Use a different six-digit code for each phone.
@@ -102,6 +104,7 @@ ENVIRONMENT=production
 OTP_DELIVERY_MODE=termii
 DEMO_AUTH_ENABLED=false
 DEMO_HEALTH_WORKER_PHONE=
+CONSULTATION_DEMO_MODE=false
 ```
 
 ## Build the Android app

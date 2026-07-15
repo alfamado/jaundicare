@@ -379,7 +379,11 @@ export default function ProfileScreen() {
       Alert.alert(t("profile.saved_title"), t("common.profile_saved"));
     },
     onError: (err: any) => {
-      Alert.alert(t("common.error"), err?.message ?? t("common.request_failed"));
+      Alert.alert(
+        t("common.error"),
+        err?.response?.data?.detail
+          ?? "We could not save the baby profile. Please try again while connected.",
+      );
     },
   });
 

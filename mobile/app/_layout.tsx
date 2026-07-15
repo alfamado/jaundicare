@@ -452,7 +452,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const onboarded = useAppStore((s) => s.onboarded); // Zustand store uses a selector function
-  const { isAuthenticated, isHydrated, refreshSessionInBackground } = useAuth();
+  const { isAuthenticated, isHydrated, role, refreshSessionInBackground } = useAuth();
 
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
@@ -479,14 +479,16 @@ export default function RootLayout() {
         } else if (!isAuthenticated) {
           router.replace("/auth/phone");
         } else {
-          // User is onboarded and authenticated, push safely to dashboard destination
-          router.replace("/(tabs)");
+          // Start at the user's next useful action, not an information-heavy dashboard.
+          router.replace(
+            role === "health_worker" ? "/(tabs)/chw" : "/(tabs)/screening",
+          );
         }
       }, 1);
       
       return () => clearTimeout(timer);
     }
-  }, [fontsLoaded, isAuthenticated, isHydrated, onboarded]);
+  }, [fontsLoaded, isAuthenticated, isHydrated, onboarded, role]);
 
   // Protected network mutation synchronization engine
   useEffect(() => {
