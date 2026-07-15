@@ -317,6 +317,27 @@ import { useAppStore } from "../../store/appStore";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useTranslations } from "../../hooks/useTranslations";
+
+function dateForDisplay(value?: string): string {
+  const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value ?? "";
+}
+
+function dateForApi(value: string): string | null {
+  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (
+    parsed.getUTCFullYear() !== Number(year)
+    || parsed.getUTCMonth() !== Number(month) - 1
+    || parsed.getUTCDate() !== Number(day)
+  ) {
+    return null;
+  }
+  return `${year}-${month}-${day}`;
+}
 import { Colors, Fonts, Radius, Shadow } from "../../constants/colors";
 
 const LANGUAGE_OPTIONS = [
@@ -353,7 +374,7 @@ export default function ProfileScreen() {
       setForm({
         baby_name:             profile.baby_name             ?? "",
         parent_name:           profile.parent_name           ?? "",
-        date_of_birth:         profile.date_of_birth         ?? "",
+        date_of_birth:         dateForDisplay(profile.date_of_birth),
         time_of_birth:         profile.time_of_birth         ?? "",
         sex:                   profile.sex                   ?? "",
         gestational_age_weeks: profile.gestational_age_weeks?.toString() ?? "",
@@ -366,7 +387,7 @@ export default function ProfileScreen() {
     mutationFn: () => profileApi.save({
       baby_name:             form.baby_name.trim(),
       parent_name:           form.parent_name.trim() || undefined,
-      date_of_birth:         form.date_of_birth.trim(),
+      date_of_birth:         dateForApi(form.date_of_birth) ?? "",
       time_of_birth:         form.time_of_birth.trim(),
       sex:                   form.sex || undefined,
       gestational_age_weeks: form.gestational_age_weeks
@@ -392,10 +413,8 @@ export default function ProfileScreen() {
       return Alert.alert("Missing Information", "Please enter your baby's name.");
     }
     
-    // Strict ISO date syntax verification (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-    if (!dateRegex.test(form.date_of_birth.trim())) {
-      return Alert.alert("Invalid Format", "Date of birth must use the YYYY-MM-DD layout.");
+    if (!dateForApi(form.date_of_birth)) {
+      return Alert.alert("Invalid Format", "Date of birth must use the DD/MM/YYYY layout.");
     }
 
     // Strict 24h digital time syntax verification (HH:MM)
@@ -520,12 +539,12 @@ export default function ProfileScreen() {
               style={s.input}
               value={form.date_of_birth}
               onChangeText={(v) => setForm((f) => ({ ...f, date_of_birth: v }))}
-              placeholder="YYYY-MM-DD"
+              placeholder="DD/MM/YYYY"
               placeholderTextColor={Colors.brownLight}
               maxLength={10}
               autoCorrect={false}
             />
-            <Text style={s.helper}>Format: 2026-06-01</Text>
+            <Text style={s.helper}>Format: 01/06/2026</Text>
           </View>
 
           {/* Time of birth */}
@@ -586,7 +605,7 @@ export default function ProfileScreen() {
             {[
               [t("profile.baby_name"),         profile.baby_name],
               [t("profile.parent_name"),       profile.parent_name],
-              [t("profile.date_of_birth"),     profile.date_of_birth],
+              [t("profile.date_of_birth"),     dateForDisplay(profile.date_of_birth)],
               [t("profile.time_of_birth"),     profile.time_of_birth],
               [t("profile.sex"),               profile.sex === "male" ? t("common.male") : profile.sex === "female" ? t("common.female") : profile.sex],
               [t("profile.gestational_age"),   profile.gestational_age_weeks ? `${profile.gestational_age_weeks}` : null],

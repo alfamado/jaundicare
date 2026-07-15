@@ -100,7 +100,7 @@ async def _ask(
             answer = answer.strip()
             # Do not log health questions or replies. Length alone confirms
             # the upstream assistant sent usable content to the mobile client.
-            logger.info("%s upstream reply received (%d characters)", assistant_name, len(answer))
+            logger.warning("%s upstream reply received (%d characters)", assistant_name, len(answer))
             return answer
     except httpx.TimeoutException as error:
         raise AssistantServiceError(
