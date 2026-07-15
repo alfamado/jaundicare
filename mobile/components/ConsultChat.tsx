@@ -447,7 +447,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Keyboard, Platform, FlatList,
+  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Keyboard, Platform, ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
@@ -476,14 +476,18 @@ export function ConsultChat({
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const listRef = useRef<FlatList>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const scrollToLatest = useCallback(() => {
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
     const showSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
       setKeyboardHeight(event.endCoordinates.height);
-      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+      scrollToLatest();
     });
     const hideSubscription = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
 
@@ -491,12 +495,17 @@ export function ConsultChat({
       showSubscription.remove();
       hideSubscription.remove();
     };
-  }, []);
+  }, [scrollToLatest]);
+
+  useEffect(() => {
+    scrollToLatest();
+  }, [keyboardHeight, loading, messages.length, scrollToLatest]);
 
   const send = async (text: string) => {
     const trimmedText = text.trim();
     if (!trimmedText || loading) return;
-    
+
+    Keyboard.dismiss();
     setInput("");
 
     const userMsg: Message = {
@@ -524,10 +533,13 @@ export function ConsultChat({
       
       clearTimeout(timeoutId);
 
+      const reply = typeof data?.response === "string" && data.response.trim()
+        ? data.response.trim()
+        : "The assistant returned an unreadable reply. Please try again.";
       const assistantMsg: Message = {
         id:        `ai_${Date.now()}`,
         role:      "assistant",
-        text:      data.response ?? "No response received from triage node.",
+        text:      reply,
         timestamp: new Date().toISOString(),
       };
 
@@ -560,6 +572,7 @@ export function ConsultChat({
     const isAI = item.role === "assistant";
     return (
       <View
+        key={item.id}
         style={[
           s.bubble, 
           isAI ? s.bubbleAI : s.bubbleUser,
@@ -586,23 +599,6 @@ export function ConsultChat({
     </View>
   ), [title, subtitle, accentColor]);
 
-  // Handle baseline dynamic suggestions
-  const renderFooter = useMemo(() => {
-    if (messages.length > 0) return null;
-    return (
-      <View style={s.emptyContainer}>
-        <Text style={s.emptyText}>Ask a question to get started.</Text>
-        <View style={s.suggestions}>
-          {suggestedQuestions.map((q, i) => (
-            <TouchableOpacity key={i} style={s.suggestionChip} onPress={() => send(q)}>
-              <Text style={s.suggestionText}>{q}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }, [messages.length, suggestedQuestions]);
-
   return (
     <KeyboardAvoidingView
       style={s.container}
@@ -612,34 +608,42 @@ export function ConsultChat({
       <View style={[s.chatContent, Platform.OS === "android" && { paddingBottom: keyboardHeight }]}>
         {renderHeader}
 
-        {/* Lazily evaluated context queue list container */}
-        <FlatList
-          ref={listRef}
+        <ScrollView
+          ref={scrollRef}
           style={s.messageList}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListFooterComponent={
-            <>
-              {renderFooter}
-              {loading && (
-                <View style={[s.bubble, s.bubbleAI, s.loadingBubble, { flexDirection: "row" }]}>
-                  <ActivityIndicator size="small" color={accentColor} />
-                  <Text style={[s.bubbleText, { color: Colors.brownLight, marginLeft: 8 }]}>
-                    Thinking...
-                  </Text>
-                </View>
-              )}
-            </>
-          }
           contentContainerStyle={s.messagesContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          onContentSizeChange={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
-          removeClippedSubviews={Platform.OS === "android"} // Memory optimization barrier
-        />
+          onContentSizeChange={scrollToLatest}
+        >
+          {messages.length === 0 && (
+            <View style={s.emptyContainer}>
+              <Text style={s.emptyText}>Ask a question to get started.</Text>
+              <View style={s.suggestions}>
+                {suggestedQuestions.map((question) => (
+                  <TouchableOpacity
+                    key={question}
+                    style={s.suggestionChip}
+                    onPress={() => { void send(question); }}
+                    disabled={loading}
+                  >
+                    <Text style={s.suggestionText}>{question}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          {messages.map((message) => renderItem({ item: message }))}
+          {loading && (
+            <View style={[s.bubble, s.bubbleAI, s.loadingBubble, { flexDirection: "row" }]}>
+              <ActivityIndicator size="small" color={accentColor} />
+              <Text style={[s.bubbleText, { color: Colors.brownLight, marginLeft: 8 }]}>
+                Waiting for the assistant…
+              </Text>
+            </View>
+          )}
+        </ScrollView>
 
         {/* Input Module Bar */}
         <View style={s.inputRow}>
@@ -651,7 +655,7 @@ export function ConsultChat({
             placeholderTextColor={Colors.brownLight}
             multiline
             maxLength={500}
-            onFocus={() => requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))}
+            onFocus={scrollToLatest}
           />
           <TouchableOpacity
             style={[s.sendBtn, { backgroundColor: accentColor }, (!input.trim() || loading) && { opacity: 0.5 }]}

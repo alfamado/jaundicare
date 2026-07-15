@@ -1,5 +1,6 @@
 """Network clients for JaundiCare's optional maternal and immunisation assistants."""
 
+import logging
 import os
 import uuid
 
@@ -16,6 +17,7 @@ CONSULTATION_DEMO_MODE = os.getenv("CONSULTATION_DEMO_MODE", "false").strip().lo
     "1", "true", "yes", "on",
 }
 TIMEOUT = 30.0
+logger = logging.getLogger(__name__)
 
 
 class AssistantServiceError(RuntimeError):
@@ -95,7 +97,11 @@ async def _ask(
                 raise AssistantServiceError(
                     f"{assistant_name} returned an empty response. Please try again."
                 )
-            return answer.strip()
+            answer = answer.strip()
+            # Do not log health questions or replies. Length alone confirms
+            # the upstream assistant sent usable content to the mobile client.
+            logger.info("%s upstream reply received (%d characters)", assistant_name, len(answer))
+            return answer
     except httpx.TimeoutException as error:
         raise AssistantServiceError(
             f"{assistant_name} is taking longer than expected. Please try again in a moment."
