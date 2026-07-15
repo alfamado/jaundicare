@@ -444,10 +444,10 @@
  * Used inside care.tsx (MamaBot) and chw.tsx (VaxAI).
  */
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, FlatList,
+  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Keyboard, Platform, FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
@@ -475,11 +475,23 @@ export function ConsultChat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const listRef = useRef<FlatList>(null);
-  // Keep the same upstream session for the life of this conversation.
-  const chatIdRef = useRef(
-    `${endpoint}_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`,
-  );
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const showSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const send = async (text: string) => {
     const trimmedText = text.trim();
@@ -498,14 +510,15 @@ export function ConsultChat({
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
-    // Structural execution timeout for network protection (15 seconds)
+    // The backend can wait up to 30 seconds for an upstream assistant. Allow
+    // enough time for that response and normal mobile-network latency.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const { data } = await api.post(
         `/consult/${endpoint}`,
-        { message: trimmedText, chat_id: chatIdRef.current },
+        { message: trimmedText },
         { signal: controller.signal },
       );
       
@@ -593,77 +606,82 @@ export function ConsultChat({
   return (
     <KeyboardAvoidingView
       style={s.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      {renderHeader}
+      <View style={[s.chatContent, Platform.OS === "android" && { paddingBottom: keyboardHeight }]}>
+        {renderHeader}
 
-      {/* Lazily evaluated context queue list container */}
-      <FlatList
-        ref={listRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListFooterComponent={
-          <>
-            {renderFooter}
-            {loading && (
-              <View style={[s.bubble, s.bubbleAI, s.loadingBubble, { flexDirection: "row" }]}>
-                <ActivityIndicator size="small" color={accentColor} />
-                <Text style={[s.bubbleText, { color: Colors.brownLight, marginLeft: 8 }]}>
-                  Thinking...
-                </Text>
-              </View>
-            )}
-          </>
-        }
-        contentContainerStyle={s.messagesContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        onContentSizeChange={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
-        removeClippedSubviews={Platform.OS === "android"} // Memory optimization barrier
-      />
-
-      {/* Input Module Bar */}
-      <View style={s.inputRow}>
-        <TextInput
-          style={s.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.brownLight}
-          multiline
-          maxLength={500}
-          onFocus={() => listRef.current?.scrollToEnd({ animated: true })}
+        {/* Lazily evaluated context queue list container */}
+        <FlatList
+          ref={listRef}
+          style={s.messageList}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListFooterComponent={
+            <>
+              {renderFooter}
+              {loading && (
+                <View style={[s.bubble, s.bubbleAI, s.loadingBubble, { flexDirection: "row" }]}>
+                  <ActivityIndicator size="small" color={accentColor} />
+                  <Text style={[s.bubbleText, { color: Colors.brownLight, marginLeft: 8 }]}>
+                    Thinking...
+                  </Text>
+                </View>
+              )}
+            </>
+          }
+          contentContainerStyle={s.messagesContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          onContentSizeChange={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => messages.length > 0 && listRef.current?.scrollToEnd({ animated: true })}
+          removeClippedSubviews={Platform.OS === "android"} // Memory optimization barrier
         />
-        <TouchableOpacity
-          style={[s.sendBtn, { backgroundColor: accentColor }, (!input.trim() || loading) && { opacity: 0.5 }]}
-          onPress={() => send(input)}
-          disabled={!input.trim() || loading}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="send" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
 
-      <Text style={s.disclaimer}>
-        JaundiCare guidance is educational and does not replace professional medical advice.
-      </Text>
+        {/* Input Module Bar */}
+        <View style={s.inputRow}>
+          <TextInput
+            style={s.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder={placeholder}
+            placeholderTextColor={Colors.brownLight}
+            multiline
+            maxLength={500}
+            onFocus={() => requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))}
+          />
+          <TouchableOpacity
+            style={[s.sendBtn, { backgroundColor: accentColor }, (!input.trim() || loading) && { opacity: 0.5 }]}
+            onPress={() => send(input)}
+            disabled={!input.trim() || loading}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="send" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={s.disclaimer}>
+          JaundiCare guidance is educational and does not replace professional medical advice.
+        </Text>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  chatContent: { flex: 1 },
   header: {
-    padding: 16, borderLeftWidth: 3,
-    marginHorizontal: 16, marginTop: 8, marginBottom: 4,
+    padding: 12, borderLeftWidth: 3,
+    marginHorizontal: 12, marginTop: 4, marginBottom: 2,
   },
   title:    { fontFamily: Fonts.bold, fontSize: 17, color: Colors.earth },
   subtitle: { fontFamily: Fonts.regular, fontSize: 12, color: Colors.brownLight, marginTop: 2 },
-  messagesContent: { paddingHorizontal: 16, paddingVertical: 12, gap: 10, flexGrow: 1 },
+  messageList: { flex: 1, minHeight: 0 },
+  messagesContent: { paddingHorizontal: 12, paddingVertical: 8, gap: 8, flexGrow: 1 },
   emptyContainer: { paddingVertical: 8 },
   emptyText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.brownLight, textAlign: "center", marginBottom: 16 },
   suggestions: { gap: 8 },
@@ -683,15 +701,15 @@ const s = StyleSheet.create({
   bubbleTextUser: { color: "#fff" },
   aiIcon: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center", marginTop: 1 },
   inputRow: {
-    flexDirection: "row", gap: 8, padding: 12,
+    flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8,
     borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.background,
     alignItems: "flex-end"
   },
   input: {
     flex: 1, backgroundColor: Colors.card, borderRadius: Radius.lg,
-    padding: 10, paddingTop: 10, paddingBottom: 10,
-    fontFamily: Fonts.regular, fontSize: 14, color: Colors.earth,
-    borderWidth: 1, borderColor: Colors.border, maxHeight: 100,
+    minHeight: 44, maxHeight: 76, paddingHorizontal: 10, paddingVertical: 8,
+    fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, color: Colors.earth,
+    borderWidth: 1, borderColor: Colors.border, textAlignVertical: "top", includeFontPadding: false,
   },
   sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", marginBottom: 1 },
   disclaimer: {

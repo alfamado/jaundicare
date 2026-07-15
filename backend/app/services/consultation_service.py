@@ -75,17 +75,27 @@ async def _ask(
     api_key: str | None,
     message: str,
     assistant_name: str,
-    chat_id: str | None,
+    _client_chat_id: str | None,
 ) -> str:
+    # The hackathon assistants are session-managed. A new server-side ID for
+    # every request keeps this integration stateless and prevents one user's
+    # context from affecting another user's answer.
+    upstream_chat_id = str(uuid.uuid4())
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.post(
                 url,
                 headers={"X-API-KEY": api_key or "", "Content-Type": "application/json"},
-                json={"message": message, "chat_id": chat_id or str(uuid.uuid4())},
+                json={"message": message, "chat_id": upstream_chat_id},
             )
             response.raise_for_status()
-            return response.json().get("response", f"No response received from {assistant_name}.")
+            payload = response.json()
+            answer = payload.get("response") if isinstance(payload, dict) else None
+            if not isinstance(answer, str) or not answer.strip():
+                raise AssistantServiceError(
+                    f"{assistant_name} returned an empty response. Please try again."
+                )
+            return answer.strip()
     except httpx.TimeoutException as error:
         raise AssistantServiceError(
             f"{assistant_name} is taking longer than expected. Please try again in a moment."
