@@ -444,10 +444,10 @@
  * Used inside care.tsx (MamaBot) and chw.tsx (VaxAI).
  */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Keyboard, Platform, ScrollView,
+  StyleSheet, ActivityIndicator, Dimensions, KeyboardAvoidingView, Keyboard, Platform, ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
@@ -475,31 +475,39 @@ export function ConsultChat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const restingWindowHeight = useRef(Dimensions.get("window").height);
 
   const scrollToLatest = useCallback(() => {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, []);
 
   useEffect(() => {
+    scrollToLatest();
+  }, [loading, messages.length, scrollToLatest]);
+
+  useEffect(() => {
     if (Platform.OS !== "android") return;
 
     const showSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
+      // Some Android modal/tab combinations resize the window, while others
+      // draw the keyboard over it. Add only the part that remains uncovered.
+      const currentWindowHeight = Dimensions.get("window").height;
+      const alreadyResizedBy = Math.max(0, restingWindowHeight.current - currentWindowHeight);
+      setKeyboardInset(Math.max(0, event.endCoordinates.height - alreadyResizedBy));
       scrollToLatest();
     });
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      restingWindowHeight.current = Dimensions.get("window").height;
+      setKeyboardInset(0);
+    });
 
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
     };
   }, [scrollToLatest]);
-
-  useEffect(() => {
-    scrollToLatest();
-  }, [keyboardHeight, loading, messages.length, scrollToLatest]);
 
   const send = async (text: string) => {
     const trimmedText = text.trim();
@@ -567,8 +575,7 @@ export function ConsultChat({
     }
   };
 
-  // High performance list renderer closure
-  const renderItem = useCallback(({ item }: { item: Message }) => {
+  const renderMessage = useCallback((item: Message) => {
     const isAI = item.role === "assistant";
     return (
       <View
@@ -591,22 +598,17 @@ export function ConsultChat({
     );
   }, [accentColor]);
 
-  // Handle header list layout abstraction
-  const renderHeader = useMemo(() => (
-    <View style={[s.header, { borderLeftColor: accentColor }]}>
-      <Text style={s.title}>{title}</Text>
-      <Text style={s.subtitle}>{subtitle}</Text>
-    </View>
-  ), [title, subtitle, accentColor]);
-
   return (
     <KeyboardAvoidingView
       style={s.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <View style={[s.chatContent, Platform.OS === "android" && { paddingBottom: keyboardHeight }]}>
-        {renderHeader}
+      <View style={[s.chatContent, { paddingBottom: keyboardInset }]}>
+        <View style={[s.header, { borderLeftColor: accentColor }]}>
+          <Text style={s.title}>{title}</Text>
+          <Text style={s.subtitle}>{subtitle}</Text>
+        </View>
 
         <ScrollView
           ref={scrollRef}
@@ -634,7 +636,7 @@ export function ConsultChat({
               </View>
             </View>
           )}
-          {messages.map((message) => renderItem({ item: message }))}
+          {messages.map(renderMessage)}
           {loading && (
             <View style={[s.bubble, s.bubbleAI, s.loadingBubble, { flexDirection: "row" }]}>
               <ActivityIndicator size="small" color={accentColor} />
@@ -695,13 +697,16 @@ const s = StyleSheet.create({
   },
   suggestionText: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.earth },
   bubble: {
-    maxWidth: "85%", borderRadius: Radius.lg, padding: 12,
+    maxWidth: "88%", borderRadius: Radius.lg, padding: 12,
     alignItems: "flex-start", gap: 6,
   },
   bubbleUser: { backgroundColor: Colors.coral, alignSelf: "flex-end" },
   bubbleAI:   { backgroundColor: Colors.card, alignSelf: "flex-start", ...Shadow.sm },
   loadingBubble: { alignSelf: "flex-start", marginTop: 4 },
-  bubbleText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.earth, flex: 1, lineHeight: 21 },
+  // Do not use flex: 1 here. In an auto-sized horizontal assistant bubble on
+  // Android it gives the Text a zero flex basis, so the received reply exists
+  // in state but its text has no visible width.
+  bubbleText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.earth, flexShrink: 1, lineHeight: 21 },
   bubbleTextUser: { color: "#fff" },
   aiIcon: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center", marginTop: 1 },
   inputRow: {

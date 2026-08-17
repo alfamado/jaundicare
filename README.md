@@ -24,8 +24,8 @@ It is designed for lower-end Android phones and unreliable networks. The experie
 ```text
 backend/        FastAPI API, database migrations, triage, AI, facilities, and integrations
 mobile/         Expo / React Native Android application
-web/            Original browser prototype using the same API
-render.yaml     Render blueprint for the API and PostgreSQL database
+web/            React/Vite public website and authenticated browser companion
+render.yaml     Render blueprint for the API (using an externally supplied database)
 ```
 
 ## Fast demo: use the built Android APK
@@ -39,7 +39,36 @@ The verified release APK is at:
 3. Open the app. English narration starts once on the welcome screen. Switching languages stops the previous narration before the next one starts.
 4. On the dashboard, choose **Find care nearby**, allow location access, then try **Government** to see facilities with services such as bilirubin testing and phototherapy. If GPS is unavailable, select State and LGA manually.
 
-## Render deployment
+## Supabase database + Render API deployment
+
+JaundiCare keeps the FastAPI service on Render and uses Supabase only as its
+managed PostgreSQL database. The mobile app continues to call the same Render
+API URL, so it does **not** need a rebuild for this database migration.
+
+1. Create a Supabase project in a region near your users.
+2. In the Supabase dashboard choose **Connect** and copy the **Session pooler**
+   URI (port `5432`). This is the appropriate connection for Render and other
+   IPv4-only persistent app servers. Do not use the direct URI on the Supabase
+   Free plan: it is IPv6-only.
+3. Append `?sslmode=require` if Supabase did not include it, then set that
+   complete URI as `DATABASE_URL` in Render's Environment page.
+4. Set `DB_POOL_SIZE=3` and `DB_MAX_OVERFLOW=2` in Render.
+5. Deploy the backend. Its existing start command runs `alembic upgrade head`
+   before starting the API, which creates the schema in the new database.
+6. Visit `/health`, then sign in and create one baby profile to verify the
+   migration. A newly created Supabase database starts empty; old Render data
+   can only be copied if its database is still accessible for export.
+
+The Supabase Free plan is suitable for the MVP, but it has a 500 MB database
+limit and pauses inactive projects after one week. Use an uptime check or open
+the project before a demo, and plan a paid/managed database before clinical
+production.
+
+The root [`render.yaml`](render.yaml) and [`backend/render.yaml`](backend/render.yaml)
+now expect an externally supplied `DATABASE_URL`; neither provisions a Render
+PostgreSQL instance.
+
+### Render deployment
 
 Use the repository root [`render.yaml`](render.yaml), or configure the service manually:
 
@@ -53,7 +82,9 @@ Health check: /health
 Set all secrets only in Render's Environment page—never in Git or the mobile app:
 
 ```text
-DATABASE_URL                 Render PostgreSQL connection string
+DATABASE_URL                 Supabase Session pooler connection string with sslmode=require
+DB_POOL_SIZE                 3
+DB_MAX_OVERFLOW              2
 JWT_SECRET                   long random secret
 RATE_LIMIT_SALT              separate long random secret
 CLOUDINARY_CLOUD_NAME        optional, needed for consented cloud image storage
@@ -146,6 +177,78 @@ The standalone APK is written to:
 ```text
 mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
+
+## Run and deploy the website
+
+The `web/` folder is a React/Vite site designed for a public domain. It provides
+an easy-to-understand product page, privacy notice, terms of use, and a secure
+browser companion at `/app`. The browser companion uses the same FastAPI API as
+the mobile app and keeps authentication tokens only in the current browser
+session. It includes the five recorded welcome narrations, parent screening,
+facilities and directions, history, care guidance, MamaBot and VaxAI. A
+provisioned community-health-worker account also receives assisted screening,
+its own activity summary, and the bilirubin reference tool.
+
+The original static prototype is preserved as
+[`web/legacy-index.html`](web/legacy-index.html) for reference; it is not the
+site that should be deployed.
+
+For local development:
+
+```powershell
+cd web
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Set `VITE_API_BASE_URL` in `web/.env` to the deployed FastAPI URL. Do not put
+database URLs, provider API keys, SMS credentials, or private service keys in a
+Vite environment file: any `VITE_` value is public in the built website.
+
+The website caches only its public application shell and language/audio assets.
+It never caches API responses or authenticated clinical data. When a signed-in
+browser is genuinely offline, a screening image and form data can be queued in
+that browser's IndexedDB with Web Crypto encryption, alongside conservative
+symptom-only safety guidance. It will sync when the same signed-in account
+reconnects. This is a continuity feature, not an alternative to the Android
+offline implementation; users can remove queued items from the connection bar.
+
+`VITE_DEMO_AUTH_ENABLED` must remain `false` in a public deployment. It merely
+shows the demo role selector in the browser; the API remains responsible for
+allowing it and must itself be in the restricted demo OTP mode. A normal browser
+visitor can never self-assign a community-health-worker role.
+
+Verify the production bundle before deployment:
+
+```powershell
+npm run build
+```
+
+### Deploy the website to Vercel
+
+1. Create a Vercel project from this repository and set **Root Directory** to
+   `web`.
+2. Use build command `npm run build` and output directory `dist`.
+3. Add `VITE_API_BASE_URL=https://your-service.onrender.com` in Vercel's
+   Environment Variables, then redeploy. Add the optional public download and
+   contact values only when they are ready.
+4. Add your custom domain in Vercel and wait for HTTPS to be issued. The public
+   routes will be `https://your-domain/`, `/privacy`, `/terms`, and `/app`.
+5. In Render, set `CORS_ALLOWED_ORIGINS` to the exact browser origins, for
+   example `https://your-domain,https://www.your-domain`; redeploy the API.
+   Add the Vercel preview origin only if you deliberately need browser testing
+   on it.
+
+The website is useful evidence of a real product when requesting an SMS sender
+ID, but the SMS provider remains responsible for approval. Keep the privacy,
+terms, contact, and product information live on the custom domain before
+resubmitting that request.
+
+The community activity view is deliberately limited to screenings created by
+that signed-in community account. Do not turn it into a cross-parent or
+population dashboard until the backend has organisation, facility, assignment,
+consent, and aggregation boundaries designed for that purpose.
 
 ## Run the backend locally
 

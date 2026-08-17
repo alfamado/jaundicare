@@ -452,7 +452,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const onboarded = useAppStore((s) => s.onboarded); // Zustand store uses a selector function
-  const { isAuthenticated, isHydrated, role, refreshSessionInBackground } = useAuth();
+  const { isAuthenticated, isHydrated, role } = useAuth();
 
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
@@ -497,16 +497,15 @@ export default function RootLayout() {
     let isInitialMount = true;
 
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // Intercept the initial listener snapshot fire to save processing power on boot
+      // Intercept the initial listener snapshot fire to save processing power on boot.
+      // Token rotation is deliberately handled only by the API interceptor.
+      // Refreshing here as well races with an expired request, reuses a
+      // single-use refresh token, and invalidates an otherwise valid session.
       if (isInitialMount) {
         isInitialMount = false;
         if (state.isConnected && state.isInternetReachable === true) {
-          refreshSessionInBackground().then((refreshed) => {
-            if (refreshed) {
-              return syncOfflineStore();
-            }
-          }).catch((error) => {
-            console.error("Initial session refresh failed:", error);
+          syncOfflineStore().catch((error) => {
+            console.error("Initial offline-sync transaction failed:", error);
           });
         }
         return;

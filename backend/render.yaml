@@ -7,9 +7,11 @@ services:
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: jaundicare-db
-          property: connectionString
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
@@ -60,8 +62,3 @@ services:
         value: "false"
       - key: ENVIRONMENT
         value: production
-
-databases:
-  - name: jaundicare-db
-    databaseName: jaundicare
-    plan: free
