@@ -12,6 +12,11 @@ import { assessBhutaniZone } from "./bhutani";
 import { clearQueuedScreenings, getQueuedScreeningCount, offlineQueueSupported, queueScreening, syncQueuedScreenings } from "./offlineQueue";
 import { evaluateOfflineSafety } from "./offlineTriage";
 import { playWelcomeAudio, stopWelcomeAudio } from "./welcomeAudio";
+import englishTranslations from "../i18n/en.json";
+import yorubaTranslations from "../i18n/yo.json";
+import hausaTranslations from "../i18n/ha.json";
+import igboTranslations from "../i18n/ig.json";
+import pidginTranslations from "../i18n/pcm.json";
 
 const languages = [
   ["en", "English"],
@@ -21,16 +26,24 @@ const languages = [
   ["pcm", "Pidgin"],
 ];
 
+const translationCatalog = {
+  en: englishTranslations,
+  yo: yorubaTranslations,
+  ha: hausaTranslations,
+  ig: igboTranslations,
+  pcm: pidginTranslations,
+};
+
 const symptomFields = [
-  ["yellow_eyes", "Yellowing in the whites of the eyes"],
-  ["yellow_gums", "Yellow gums"],
-  ["yellow_palms_or_soles", "Yellow palms or soles"],
-  ["jaundice_first_24h", "Yellowing started within the first 24 hours"],
-  ["jaundice_spreading", "Yellowing is spreading or becoming stronger"],
-  ["difficult_to_wake", "Baby is difficult to wake"],
-  ["floppy_or_unusually_drowsy", "Baby is unusually sleepy or floppy"],
-  ["dark_urine", "Dark urine"],
-  ["pale_stool", "Pale or chalk-coloured stool"],
+  ["yellow_eyes", "signs.yellow_eyes", "Yellowing in the whites of the eyes"],
+  ["yellow_gums", "signs.yellow_gums", "Yellow gums"],
+  ["yellow_palms_or_soles", "signs.yellow_palms", "Yellow palms or soles"],
+  ["jaundice_first_24h", "signs.first24h", "Yellowing started within the first 24 hours"],
+  ["jaundice_spreading", "signs.spreading", "Yellowing is spreading or becoming stronger"],
+  ["difficult_to_wake", "signs.difficult_to_wake", "Baby is difficult to wake"],
+  ["floppy_or_unusually_drowsy", "signs.floppy", "Baby is unusually sleepy or floppy"],
+  ["dark_urine", "signs.dark_urine", "Dark urine"],
+  ["pale_stool", "signs.pale_stool", "Pale or chalk-coloured stool"],
 ];
 
 function usePath() {
@@ -52,20 +65,8 @@ function usePath() {
 }
 
 function useTranslations(language) {
-  const [translations, setTranslations] = useState({});
-
-  useEffect(() => {
-    let active = true;
-    fetch(`/i18n/${language}.json`)
-      .then((response) => (response.ok ? response.json() : {}))
-      .then((data) => active && setTranslations(data))
-      .catch(() => active && setTranslations({}));
-    return () => {
-      active = false;
-    };
-  }, [language]);
-
-  return (key, fallback) => translations[key] || fallback || key;
+  const translations = translationCatalog[language] || translationCatalog.en;
+  return (key, fallback) => translations[key] || translationCatalog.en[key] || fallback || key;
 }
 
 function formatNigerianPhone(value) {
@@ -94,13 +95,16 @@ function App() {
   const changeLanguage = (nextLanguage) => {
     stopWelcomeAudio();
     setLanguage(nextLanguage);
+    // Changing the language is a user gesture, so browsers allow us to start
+    // the matching recorded narration here. A first page load cannot autoplay.
+    void playWelcomeAudio(nextLanguage).catch(() => undefined);
   };
 
   const page = path === "/privacy" || path === "/terms" || path === "/app" ? path : "/";
 
   return (
     <div className="site-shell">
-      <SiteHeader language={language} onLanguageChange={changeLanguage} navigate={navigate} page={page} />
+      <SiteHeader language={language} onLanguageChange={changeLanguage} navigate={navigate} page={page} t={t} />
       {page === "/" && <Landing navigate={navigate} t={t} language={language} />}
       {page === "/app" && <WebPortal language={language} t={t} navigate={navigate} />}
       {page === "/privacy" && <LegalPage type="privacy" navigate={navigate} />}
@@ -110,20 +114,20 @@ function App() {
   );
 }
 
-function SiteHeader({ language, onLanguageChange, navigate, page }) {
+function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
   return (
     <header className="site-header">
       <button className="brand" onClick={() => navigate("/")} aria-label="JaundiCare home">
         <span className="brand-mark" aria-hidden="true">J</span>
         <span>
           <strong>JaundiCare</strong>
-          <small>Newborn care support</small>
+          <small>{t("app.support", "Newborn care support")}</small>
         </span>
       </button>
       <nav className="site-nav" aria-label="Main navigation">
-        <button onClick={() => navigate("/")}>How it works</button>
+        <button onClick={() => navigate("/")}>{t("dashboard.learn_jaundice", "How it works")}</button>
         <button onClick={() => navigate("/privacy")}>Privacy</button>
-        <button className={page === "/app" ? "nav-active" : ""} onClick={() => navigate("/app")}>Open web app</button>
+        <button className={page === "/app" ? "nav-active" : ""} onClick={() => navigate("/app")}>{t("dashboard.start_check", "Open web app")}</button>
       </nav>
       <div className="header-actions">
         <label className="language-select">
@@ -132,7 +136,7 @@ function SiteHeader({ language, onLanguageChange, navigate, page }) {
             {languages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <button className="button button-small" onClick={() => navigate("/app")}>Get started</button>
+        <button className="button button-small" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Get started")}</button>
       </div>
     </header>
   );
@@ -144,19 +148,19 @@ function Landing({ navigate, t, language }) {
     <main>
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Newborn jaundice support for Nigerian families</p>
+          <p className="eyebrow">{t("dashboard.hero_tag", "Newborn jaundice support for Nigerian families")}</p>
           <h1>{t("dashboard.hero_title", "Check early. Act early. Stay calm.")}</h1>
           <p className="hero-text">{t("dashboard.hero_text", "JaundiCare helps parents notice possible newborn jaundice early, understand warning signs, and know when to seek care.")}</p>
           <div className="hero-actions">
-            <button className="button" onClick={() => navigate("/app")}>Open web app</button>
+            <button className="button" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Open web app")}</button>
             {downloadUrl ? (
               <a className="button button-secondary" href={downloadUrl}>Get Android app</a>
             ) : (
-              <button className="button button-secondary" onClick={() => navigate("/app")}>Start a baby check</button>
+              <button className="button button-secondary" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Start a baby check")}</button>
             )}
           </div>
           <p className="hero-note">Available in English, Yorùbá, Hausa, Igbo and Nigerian Pidgin.</p>
-          <WelcomeAudioButton language={language} />
+          <WelcomeAudioButton language={language} t={t} />
         </div>
         <div className="hero-visual" aria-label="Simple illustration of parent support">
           <div className="signal-card signal-top"><span>1</span> Notice changes early</div>
@@ -234,7 +238,7 @@ function Feature({ number, title, text }) {
   return <article className="feature-card"><span>{number}</span><h3>{title}</h3><p>{text}</p></article>;
 }
 
-function WelcomeAudioButton({ language }) {
+function WelcomeAudioButton({ language, t }) {
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState("");
 
@@ -250,7 +254,7 @@ function WelcomeAudioButton({ language }) {
     }
   };
 
-  return <div className="audio-guide"><button className="text-button audio-button" type="button" onClick={play}>{playing ? "Starting audio…" : "▶ Listen to welcome guidance"}</button>{error && <small>{error}</small>}</div>;
+  return <div className="audio-guide"><button className="text-button audio-button" type="button" onClick={play}>{playing ? t("voice.playing", "Starting audio…") : `▶ ${t("voice.play", "Listen to welcome guidance")}`}</button>{error && <small>{error}</small>}</div>;
 }
 
 function WebPortal({ language, t, navigate }) {
@@ -274,11 +278,11 @@ function WebPortal({ language, t, navigate }) {
   }, []);
 
   if (checking) return <main className="portal-shell"><LoadingCard label="Securing your session…" /></main>;
-  if (!user) return <main className="portal-shell"><AuthCard language={language} onVerified={setUser} navigate={navigate} /></main>;
+  if (!user) return <main className="portal-shell"><AuthCard language={language} t={t} onVerified={setUser} navigate={navigate} /></main>;
   return <AuthenticatedApp user={user} setUser={setUser} language={language} t={t} />;
 }
 
-function AuthCard({ language, onVerified, navigate }) {
+function AuthCard({ language, t, onVerified, navigate }) {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState("phone");
@@ -316,10 +320,14 @@ function AuthCard({ language, onVerified, navigate }) {
       return;
     }
     setBusy(true);
+    // Audio must begin inside this button gesture; browsers otherwise block
+    // sound after the asynchronous OTP request resolves. Stop it on failure.
+    void playWelcomeAudio(language).catch(() => undefined);
     try {
       const account = await verifyOtp({ phoneNumber: normalisedPhone, code });
       onVerified(account);
     } catch (requestError) {
+      stopWelcomeAudio();
       setError(requestError.message);
     } finally {
       setBusy(false);
@@ -329,17 +337,17 @@ function AuthCard({ language, onVerified, navigate }) {
   return (
     <section className="auth-layout">
       <div className="auth-intro">
-        <p className="eyebrow">Secure web access</p>
-        <h1>Your newborn support, when you need it.</h1>
+        <p className="eyebrow">{t("topbar.support", "Secure web access")}</p>
+        <h1>{t("dashboard.hero_title", "Your newborn support, when you need it.")}</h1>
         <p>Sign in with your phone number. Your records remain private to your account.</p>
-        <button className="text-button inverse" onClick={() => navigate("/")}>← Back to information page</button>
+        <button className="text-button inverse" onClick={() => navigate("/")}>← {t("dashboard.learn_jaundice", "Back to information page")}</button>
       </div>
       <form className="auth-card" onSubmit={step === "phone" ? sendCode : confirmCode}>
         <p className="eyebrow">{step === "phone" ? "Step 1 of 2" : "Step 2 of 2"}</p>
         <h2>{step === "phone" ? "Enter your phone number" : "Enter your verification code"}</h2>
         <p>{step === "phone" ? "We will send a one-time code to continue." : `We sent a code to ${phone}.`}</p>
         {step === "phone" ? (
-          <><label className="form-field"><span>Phone number</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>{allowDemoRoleSelection && <label className="form-field"><span>Demo workspace</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="parent">Parent support</option><option value="health_worker">Community care</option></select><small>This choice is available only for approved demonstration phones.</small></label>}</>
+          <><label className="form-field"><span>Phone number</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>{allowDemoRoleSelection && <label className="form-field"><span>Demo workspace</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="parent">{t("mode.parent", "Parent support")}</option><option value="health_worker">{t("mode.health_worker", "Community care")}</option></select><small>This choice is available only for approved demonstration phones.</small></label>}</>
         ) : (
           <label className="form-field"><span>Six-digit code</span><input autoFocus autoComplete="one-time-code" inputMode="numeric" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} placeholder="123456" /></label>
         )}
@@ -436,8 +444,8 @@ function AuthenticatedApp({ user, setUser, language, t }) {
   };
 
   const navigation = isHealthWorker
-    ? [["community", "Community care"], ["screen", "Assisted screen"], ["analytics", "My activity"], ["bhutani", "Bilirubin reference"]]
-    : [["home", "Home"], ["profile", "Baby profile"], ["screen", "Screening"], ["history", "History"], ["guide", "Care guide"]];
+    ? [["community", t("nav.chw", "Community care")], ["screen", t("chw.actions.screening", "Assisted screen")], ["analytics", t("nav.analytics", "My activity")], ["bhutani", t("nav.nomogram", "Bilirubin reference")]]
+    : [["home", t("nav.dashboard", "Home")], ["profile", t("nav.profile", "Baby profile")], ["screen", t("nav.screening", "Screening")], ["history", t("nav.history", "History")], ["guide", t("nav.care", "Care guide")]];
 
   const completeScreening = (result) => {
     setHistory((current) => [result, ...current]);
@@ -446,8 +454,8 @@ function AuthenticatedApp({ user, setUser, language, t }) {
   return (
     <main className="portal-shell">
       <section className="app-topbar">
-        <div><p className="eyebrow">{isHealthWorker ? "Community care workspace" : "Private care workspace"}</p><h1>{isHealthWorker ? "Newborn care support" : profile?.baby_name ? `${profile.baby_name}'s care` : "Your newborn care"}</h1></div>
-        <div className="account-actions"><span>{isHealthWorker ? "Community health worker" : "Parent account"}</span><button className="text-button" onClick={handleSignOut}>Sign out</button></div>
+        <div><p className="eyebrow">{isHealthWorker ? t("nav.chw", "Community care workspace") : t("topbar.support", "Private care workspace")}</p><h1>{isHealthWorker ? t("app.support", "Newborn care support") : profile?.baby_name ? `${profile.baby_name}'s care` : t("topbar.subtitle", "Your newborn care")}</h1></div>
+        <div className="account-actions"><span>{isHealthWorker ? t("mode.health_worker", "Community health worker") : t("mode.parent", "Parent account")}</span><button className="text-button" onClick={handleSignOut}>Sign out</button></div>
       </section>
       <section className={`connection-status ${online ? "connection-online" : "connection-offline"}`}><span>{online ? "Online" : "Offline"}</span>{queueCount > 0 && <><span>•</span><strong>{queueCount} screening{queueCount === 1 ? "" : "s"} queued securely on this browser</strong>{online && <button className="text-button" onClick={() => void syncOfflineQueue()}>Sync now</button>}</>}{queueCount > 0 && <button className="text-button" onClick={() => void clearQueuedScreenings(user.user_id).then(refreshQueueCount)}>Remove queued items</button>}</section>
       {syncNotice && <p className="notice success">{syncNotice}</p>}
@@ -457,14 +465,14 @@ function AuthenticatedApp({ user, setUser, language, t }) {
       {error && <p className="notice error">{error}</p>}
       {loading ? <LoadingCard label="Loading your care information…" /> : (
         <div className="app-content">
-          {!isHealthWorker && tab === "home" && <AppHome profile={profile} history={history} setTab={setTab} />}
-          {!isHealthWorker && tab === "profile" && <ProfileEditor profile={profile} onSaved={(value) => { setProfile(value); setTab("screen"); }} />}
-          {tab === "screen" && <ScreeningForm profile={isHealthWorker ? null : profile} language={language} ownerId={user.user_id} communityMode={isHealthWorker} onQueued={refreshQueueCount} onCompleted={completeScreening} />}
-          {!isHealthWorker && tab === "history" && <HistoryList items={history} />}
-          {!isHealthWorker && tab === "guide" && <CareGuide />}
-          {isHealthWorker && tab === "community" && <CommunityCare history={history} queueCount={queueCount} setTab={setTab} />}
-          {isHealthWorker && tab === "analytics" && <CommunityAnalytics history={history} />}
-          {isHealthWorker && tab === "bhutani" && <BhutaniReference />}
+          {!isHealthWorker && tab === "home" && <AppHome profile={profile} history={history} setTab={setTab} t={t} />}
+          {!isHealthWorker && tab === "profile" && <ProfileEditor profile={profile} t={t} onSaved={(value) => { setProfile(value); setTab("screen"); }} />}
+          {tab === "screen" && <ScreeningForm profile={isHealthWorker ? null : profile} language={language} t={t} ownerId={user.user_id} communityMode={isHealthWorker} onQueued={refreshQueueCount} onCompleted={completeScreening} />}
+          {!isHealthWorker && tab === "history" && <HistoryList items={history} t={t} />}
+          {!isHealthWorker && tab === "guide" && <CareGuide t={t} />}
+          {isHealthWorker && tab === "community" && <CommunityCare history={history} queueCount={queueCount} setTab={setTab} t={t} />}
+          {isHealthWorker && tab === "analytics" && <CommunityAnalytics history={history} t={t} />}
+          {isHealthWorker && tab === "bhutani" && <BhutaniReference t={t} />}
         </div>
       )}
       <AssistantHub t={t} />
@@ -472,18 +480,18 @@ function AuthenticatedApp({ user, setUser, language, t }) {
   );
 }
 
-function AppHome({ profile, history, setTab }) {
+function AppHome({ profile, history, setTab, t }) {
   const latest = history[0];
   return <>
     <section className="home-grid">
-      <article className="app-panel welcome-panel"><p className="eyebrow">Next useful action</p><h2>{profile ? "Start a guided check when you are worried." : "Save a baby profile before the first check."}</h2><p>{profile ? "The profile helps calculate age for safer triage guidance." : "Date and time of birth help the app give more useful, age-aware guidance."}</p><button className="button" onClick={() => setTab(profile ? "screen" : "profile")}>{profile ? "Start screening" : "Create baby profile"}</button></article>
-      <article className="app-panel result-panel"><p className="eyebrow">Latest screening</p><h2>{latest ? decisionLabel(latest.final_decision) : "No screening yet"}</h2><p>{latest ? latest.parent_message : "Use the guided screening when you notice yellowing, poor feeding or unusual sleepiness."}</p></article>
+      <article className="app-panel welcome-panel"><p className="eyebrow">{t("dashboard.start_check", "Next useful action")}</p><h2>{profile ? t("dashboard.start_check", "Start a guided check when you are worried.") : t("dashboard.no_profile", "Save a baby profile before the first check.")}</h2><p>{profile ? t("profile.text", "The profile helps calculate age for safer triage guidance.") : t("dashboard.create_profile_hint", "Date and time of birth help the app give more useful, age-aware guidance.")}</p><button className="button" onClick={() => setTab(profile ? "screen" : "profile")}>{profile ? t("dashboard.start_check", "Start screening") : t("profile.save", "Create baby profile")}</button></article>
+      <article className="app-panel result-panel"><p className="eyebrow">{t("dashboard.latest_screening", "Latest screening")}</p><h2>{latest ? decisionLabel(latest.final_decision, t) : t("dashboard.no_screening", "No screening yet")}</h2><p>{latest ? latest.parent_message : t("dashboard.hero_text", "Use the guided screening when you notice yellowing, poor feeding or unusual sleepiness.")}</p></article>
     </section>
     <section className="care-reminder"><strong>Go urgently now</strong> if a baby is very difficult to wake, floppy, feeding very poorly, has pale stool, or you are seriously worried. Do not wait for an online screening.</section>
   </>;
 }
 
-function ProfileEditor({ profile, onSaved }) {
+function ProfileEditor({ profile, t, onSaved }) {
   const [form, setForm] = useState({
     baby_name: profile?.baby_name || "",
     parent_name: profile?.parent_name || "",
@@ -504,14 +512,14 @@ function ProfileEditor({ profile, onSaved }) {
     } catch (requestError) { setError(requestError.message); } finally { setBusy(false); }
   };
 
-  return <section className="form-panel"><div><p className="eyebrow">Baby profile</p><h2>Save details once</h2><p>JaundiCare uses the date and time of birth to make screening guidance safer.</p></div><form className="form-grid" onSubmit={submit}>
-    <Field label="Baby's name *"><input required value={form.baby_name} onChange={(event) => setForm({ ...form, baby_name: event.target.value })} /></Field>
-    <Field label="Parent or caregiver name"><input value={form.parent_name} onChange={(event) => setForm({ ...form, parent_name: event.target.value })} /></Field>
-    <Field label="Date of birth *"><input required type="date" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} /></Field>
-    <Field label="Time of birth *"><input required type="time" value={form.time_of_birth} onChange={(event) => setForm({ ...form, time_of_birth: event.target.value })} /></Field>
-    <Field label="Sex"><select value={form.sex} onChange={(event) => setForm({ ...form, sex: event.target.value })}><option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option></select></Field>
-    <Field label="Gestational age in weeks"><input min="20" max="45" type="number" value={form.gestational_age_weeks} onChange={(event) => setForm({ ...form, gestational_age_weeks: event.target.value })} placeholder="e.g. 38" /></Field>
-    {error && <p className="notice error form-wide">{error}</p>}<button className="button form-wide" disabled={busy}>{busy ? "Saving…" : "Save baby profile"}</button>
+  return <section className="form-panel"><div><p className="eyebrow">{t("profile.title", "Baby profile")}</p><h2>{t("profile.title", "Save details once")}</h2><p>{t("profile.text", "JaundiCare uses the date and time of birth to make screening guidance safer.")}</p></div><form className="form-grid" onSubmit={submit}>
+    <Field label={`${t("profile.baby_name", "Baby's name")} *`}><input required value={form.baby_name} onChange={(event) => setForm({ ...form, baby_name: event.target.value })} /></Field>
+    <Field label={t("profile.parent_name", "Parent or caregiver name")}><input value={form.parent_name} onChange={(event) => setForm({ ...form, parent_name: event.target.value })} /></Field>
+    <Field label={`${t("profile.date_of_birth", "Date of birth")} *`}><input required type="date" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} /></Field>
+    <Field label={`${t("profile.time_of_birth", "Time of birth")} *`}><input required type="time" value={form.time_of_birth} onChange={(event) => setForm({ ...form, time_of_birth: event.target.value })} /></Field>
+    <Field label={t("profile.sex", "Sex")}><select value={form.sex} onChange={(event) => setForm({ ...form, sex: event.target.value })}><option value="">Prefer not to say</option><option value="male">{t("common.male", "Male")}</option><option value="female">{t("common.female", "Female")}</option></select></Field>
+    <Field label={t("profile.gestational_age", "Gestational age in weeks")}><input min="20" max="45" type="number" value={form.gestational_age_weeks} onChange={(event) => setForm({ ...form, gestational_age_weeks: event.target.value })} placeholder="e.g. 38" /></Field>
+    {error && <p className="notice error form-wide">{error}</p>}<button className="button form-wide" disabled={busy}>{busy ? "Saving…" : t("profile.save", "Save baby profile")}</button>
   </form></section>;
 }
 
@@ -520,7 +528,7 @@ function buildScreeningFormData(image, fields, language) {
   payload.append("image", image);
   payload.append("feeding", fields.feeding);
   payload.append("ui_language", language);
-  payload.append("allow_training_use", "false");
+  payload.append("allow_training_use", String(Boolean(fields.allow_training_use)));
   if (fields.age_hours !== undefined && fields.age_hours !== null && fields.age_hours !== "") payload.append("age_hours", String(fields.age_hours));
   ["user_state", "user_lga", "user_latitude", "user_longitude", "facility_preference"].forEach((key) => {
     if (fields[key] !== undefined && fields[key] !== null && fields[key] !== "") payload.append(key, String(fields[key]));
@@ -529,9 +537,9 @@ function buildScreeningFormData(image, fields, language) {
   return payload;
 }
 
-function ScreeningForm({ profile, language, ownerId, communityMode, onQueued, onCompleted }) {
+function ScreeningForm({ profile, language, t, ownerId, communityMode, onQueued, onCompleted }) {
   const [image, setImage] = useState(null);
-  const [form, setForm] = useState({ feeding: "good", age_hours: "", user_state: "", user_lga: "", darker_skin_tone: false, facility_preference: "nearest" });
+  const [form, setForm] = useState({ feeding: "good", age_hours: "", user_state: "", user_lga: "", darker_skin_tone: false, facility_preference: "nearest", allow_training_use: false });
   const [symptoms, setSymptoms] = useState({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -597,27 +605,55 @@ function ScreeningForm({ profile, language, ownerId, communityMode, onQueued, on
     } finally { setBusy(false); }
   };
 
-  return <section className="form-panel"><div><p className="eyebrow">{communityMode ? "Assisted community screening" : "Guided screening"}</p><h2>{communityMode ? "Document the newborn signs you observe." : "Check what you can see and how your baby is doing."}</h2><p>Use natural light. A result is support for a care decision, not a diagnosis.</p></div><form onSubmit={submit} className="screen-form">
-    <Field label="Baby photo *"><input required type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] || null)} /><small>Use a clear photo of the face and eyes. It is never stored for training from this browser. When offline, it is encrypted on this browser until it can be sent.</small></Field>
-    {!profile && <Field label="Baby age in hours (optional)"><input type="number" min="0" value={form.age_hours} onChange={(event) => setForm({ ...form, age_hours: event.target.value })} placeholder="e.g. 72" /></Field>}
-    <Field label="How is the baby feeding?"><div className="choice-row">{[["good", "Feeding well"], ["poor", "Feeding poorly"]].map(([value, label]) => <label key={value}><input type="radio" name="feeding" checked={form.feeding === value} onChange={() => setForm({ ...form, feeding: value })} /> {label}</label>)}</div></Field>
-    <div className="location-row"><Field label="State (optional)"><input value={form.user_state} onChange={(event) => setForm({ ...form, user_state: event.target.value })} placeholder="e.g. Ogun" /></Field><Field label="LGA (optional)"><input value={form.user_lga} onChange={(event) => setForm({ ...form, user_lga: event.target.value })} placeholder="e.g. Abeokuta South" /></Field><Field label="Facility preference"><select value={form.facility_preference} onChange={(event) => setForm({ ...form, facility_preference: event.target.value })}><option value="nearest">Nearest suitable care</option><option value="government">Government facility</option><option value="clinic">Private clinic</option></select></Field><button className="button button-secondary location-button" type="button" onClick={location}>Use location</button></div>
-    <fieldset className="symptom-set"><legend>Signs to check</legend>{symptomFields.map(([key, label]) => <label className="check-row" key={key}><input type="checkbox" checked={Boolean(symptoms[key])} onChange={(event) => setSymptoms({ ...symptoms, [key]: event.target.checked })} /><span>{label}</span></label>)}</fieldset>
-    {error && <p className="notice error">{error}</p>}<button className="button full-width" disabled={busy}>{busy ? "Analysing safely…" : "Review screening"}</button>
-  </form>{result && <ScreeningResult result={result} />}</section>;
+  return <section className="form-panel"><div><p className="eyebrow">{communityMode ? t("chw.actions.screening", "Assisted community screening") : t("nav.screening", "Guided screening")}</p><h2>{communityMode ? t("chw.intro", "Document the newborn signs you observe.") : t("screening.title", "Check what you can see and how your baby is doing.")}</h2><p>{t("trust.body", "Use natural light. A result is support for a care decision, not a diagnosis.")}</p></div><form onSubmit={submit} className="screen-form">
+    <Field label={`${t("screening.upload_image", "Baby photo")} *`}><input required type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] || null)} /><small>{t("screening.image_helper", "Use a clear photo of the face and eyes. When offline, it is encrypted on this browser until it can be sent.")}</small></Field>
+    {!profile && <Field label={`${t("screening.age_hours", "Baby age in hours")} (${t("common.select", "optional")})`}><input type="number" min="0" value={form.age_hours} onChange={(event) => setForm({ ...form, age_hours: event.target.value })} placeholder="e.g. 72" /></Field>}
+    <Field label={t("screening.feeding", "How is the baby feeding?")}><div className="choice-row">{[["good", t("feeding.good", "Feeding well")], ["poor", t("feeding.poor", "Feeding poorly")]].map(([value, label]) => <label key={value}><input type="radio" name="feeding" checked={form.feeding === value} onChange={() => setForm({ ...form, feeding: value })} /> {label}</label>)}</div></Field>
+    <div className="location-row"><Field label={`${t("screening.state", "State")} (${t("common.select", "optional")})`}><input value={form.user_state} onChange={(event) => setForm({ ...form, user_state: event.target.value })} placeholder={t("screening.state_placeholder", "e.g. Ogun")} /></Field><Field label="LGA (optional)"><input value={form.user_lga} onChange={(event) => setForm({ ...form, user_lga: event.target.value })} placeholder="e.g. Abeokuta South" /></Field><Field label="Facility preference"><select value={form.facility_preference} onChange={(event) => setForm({ ...form, facility_preference: event.target.value })}><option value="nearest">Nearest suitable care</option><option value="government">Government facility</option><option value="clinic">Private clinic</option></select></Field><button className="button button-secondary location-button" type="button" onClick={location}>{t("screening.use_location", "Use location")}</button></div>
+    <fieldset className="symptom-set"><legend>{t("screening.signs", "Signs to check")}</legend>{symptomFields.map(([key, labelKey, fallback]) => <label className="check-row" key={key}><input type="checkbox" checked={Boolean(symptoms[key])} onChange={(event) => setSymptoms({ ...symptoms, [key]: event.target.checked })} /><span>{t(labelKey, fallback)}</span></label>)}</fieldset>
+    <label className="consent-card"><span><strong>{t("web.consent.title", "Optional: help improve JaundiCare")}</strong><small>{t("web.consent.text", "If you choose yes, this photo may be placed in protected training storage to validate and improve the model. It is not needed for this result or care guidance. You can remove it later.")}</small></span><input type="checkbox" checked={form.allow_training_use} onChange={(event) => setForm({ ...form, allow_training_use: event.target.checked })} aria-label={t("web.consent.title", "Allow this photo to be used for model improvement")} /></label>
+    {error && <p className="notice error">{error}</p>}<button className="button full-width" disabled={busy}>{busy ? "Analysing safely…" : t("screening.submit", "Review screening")}</button>
+  </form>{result && <ScreeningResult result={result} t={t} />}</section>;
 }
 
-function ScreeningResult({ result }) {
+function nextStepsFor(decision, t) {
+  if (decision?.includes("URGENT")) return [t("next.urgent.1"), t("next.urgent.2"), t("next.urgent.3")];
+  if (decision?.includes("SAME_DAY")) return [t("next.same_day.1"), t("next.same_day.2"), t("next.same_day.3")];
+  if (decision?.includes("RECHECK")) return [t("next.recheck.1"), t("next.recheck.2"), t("next.recheck.3")];
+  return [t("next.monitor.1"), t("next.monitor.2"), t("next.monitor.3")];
+}
+
+function ScreeningResult({ result, t }) {
   const facilities = result.recommended_facilities || [];
-  return <section className={`screen-result ${decisionTone(result.final_decision)}`}><p className="eyebrow">Recommended next step</p><h2>{decisionLabel(result.final_decision)}</h2><p className="result-message">{result.parent_message}</p>{result.pending_sync && <p className="offline-result-note"><strong>Queued for secure review.</strong> This offline guidance is based on reported signs only. Keep the browser open and reconnect so the photo can be analysed.</p>}{result.notes?.length > 0 && <ul>{result.notes.map((note) => <li key={note}>{note}</li>)}</ul>}{facilities.length > 0 && <div className="facility-list"><h3>Places that may be able to help</h3>{facilities.map((facility) => <article className="facility-card" key={facility.id}><div><strong>{facility.name}</strong><p>{facility.address || [facility.lga, facility.state].filter(Boolean).join(", ")}</p><small>{facility.services?.join(" · ")}</small></div>{facility.latitude && facility.longitude && <a href={`https://www.google.com/maps/search/?api=1&query=${facility.latitude},${facility.longitude}`} target="_blank" rel="noreferrer">Directions</a>}</article>)}</div>}</section>;
+  const tone = decisionTone(result.final_decision);
+  const needsCareToday = tone === "urgent" || tone === "same-day";
+  const title = tone === "urgent" ? t("web.result.urgent_heading", "Please seek care now") : tone === "same-day" ? t("web.result.same_day_heading", "Please arrange care today") : t("web.result.monitor_heading", "Keep monitoring closely");
+  const primaryFacility = facilities.find((facility) => facility.latitude != null && facility.longitude != null);
+  return <section className={`screen-result ${tone}`}><div className="result-hero"><span className="result-icon" aria-hidden="true">{tone === "urgent" ? "!" : tone === "same-day" ? "→" : "✓"}</span><div><p className="eyebrow">{t("result.title", "Your baby’s next step")}</p><span className="result-pill">{decisionLabel(result.final_decision, t)}</span><h2>{title}</h2><p className="result-message">{result.parent_message}</p></div></div>{result.pending_sync && <p className="offline-result-note"><strong>Queued for secure review.</strong> This offline guidance is based on reported signs only. Keep the browser open and reconnect so the photo can be analysed.</p>}{needsCareToday && <section className="care-now-card"><div><strong>{tone === "urgent" ? t("parent.message.urgent", "Do not delay.") : t("parent.message.same_day", "Choose a suitable facility before you leave.")}</strong><p>{tone === "urgent" ? t("web.result.urgent_detail", "A newborn danger sign needs medical assessment now.") : t("web.result.same_day_detail", "A health worker should assess your baby today.")}</p></div>{primaryFacility && <a className="button button-secondary" href={`https://www.google.com/maps/search/?api=1&query=${primaryFacility.latitude},${primaryFacility.longitude}`} target="_blank" rel="noreferrer">{t("web.result.directions", "Get directions")}</a>}</section>}<section className="next-steps"><h3>{t("result.what_next", "What to do next")}</h3>{nextStepsFor(result.final_decision, t).map((step, index) => <div className="next-step" key={step}><span>{index + 1}</span><p>{step}</p></div>)}</section>{facilities.length > 0 && <div className="facility-list"><h3>{needsCareToday ? t("result.facilities", "Suitable care nearby") : t("result.facilities", "Places that may be able to help")}</h3>{facilities.map((facility) => <article className="facility-card" key={facility.id}><div><strong>{facility.name}</strong><p>{facility.address || [facility.lga, facility.state].filter(Boolean).join(", ")}</p><small>{facility.services?.join(" · ")}</small></div>{facility.latitude != null && facility.longitude != null && <a href={`https://www.google.com/maps/search/?api=1&query=${facility.latitude},${facility.longitude}`} target="_blank" rel="noreferrer">{t("web.result.directions", "Directions")}</a>}</article>)}</div>}{result.notes?.length > 0 && <section className="result-notes"><h3>{t("result.notes", "Additional notes")}</h3><ul>{result.notes.map((note) => <li key={note}>{note}</li>)}</ul></section>}{result.training_image_stored && <WithdrawTrainingConsent screeningId={result.screening_id} t={t} />}</section>;
 }
 
-function HistoryList({ items }) {
-  if (!items.length) return <section className="empty-panel"><h2>No screening history yet</h2><p>Your completed screening results will appear here for follow-up.</p></section>;
-  return <section className="history-list"><div><p className="eyebrow">Private screening history</p><h2>Previous checks</h2></div>{items.map((item) => <article className="history-card" key={item.screening_id}><span className={`status-dot ${decisionTone(item.final_decision)}`} /><div><strong>{decisionLabel(item.final_decision)}</strong>{item.pending_sync && <span className="pending-pill">Awaiting photo review</span>}<p>{item.parent_message}</p><small>{new Date(item.created_at).toLocaleString()}</small></div></article>)}</section>;
+function WithdrawTrainingConsent({ screeningId, t }) {
+  const [removed, setRemoved] = useState(false);
+  const [error, setError] = useState("");
+  const removeConsent = async () => {
+    if (!window.confirm(t("web.consent.remove_prompt", "Remove this training photo? Your screening result will remain available."))) return;
+    try {
+      await request(`/screening/${screeningId}/training-consent`, { method: "DELETE" });
+      setRemoved(true);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+  if (removed) return <p className="notice success">{t("web.consent.removed", "Training photo removed.")}</p>;
+  return <section className="training-status"><p>{t("web.consent.stored", "This photo was stored with your permission to help improve the model.")}</p><button className="text-button" onClick={removeConsent}>{t("web.consent.remove", "Remove this training photo")}</button>{error && <p className="notice error">{error}</p>}</section>;
 }
 
-function CareGuide() {
+function HistoryList({ items, t }) {
+  if (!items.length) return <section className="empty-panel"><h2>{t("history.empty", "No screening history yet")}</h2><p>{t("history.text", "Your completed screening results will appear here for follow-up.")}</p></section>;
+  return <section className="history-list"><div><p className="eyebrow">{t("nav.history", "Private screening history")}</p><h2>{t("history.title", "Previous checks")}</h2></div>{items.map((item) => <article className="history-card" key={item.screening_id}><span className={`status-dot ${decisionTone(item.final_decision)}`} /><div><strong>{decisionLabel(item.final_decision, t)}</strong>{item.pending_sync && <span className="pending-pill">Awaiting photo review</span>}<p>{item.parent_message}</p><small>{new Date(item.created_at).toLocaleString()}</small></div></article>)}</section>;
+}
+
+function CareGuide({ t }) {
   const sections = {
     warning: { title: "Warning signs", intro: "Seek urgent medical care if you notice any of these signs.", items: [["Baby is very hard to wake", "A baby who cannot be woken for feeds or is limp needs urgent assessment."], ["Yellowing in the first 24 hours", "Any yellowing in the first day needs hospital assessment today."], ["Dark urine or pale stool", "Dark urine or very pale stool can point to a serious problem and needs urgent review."]] },
     feeding: { title: "Feeding support", intro: "Frequent effective feeding helps newborns clear bilirubin.", items: [["Feed 8 to 12 times in 24 hours", "Offer breastfeeds often. Wake a sleepy baby for feeds."], ["Do not give water", "Water does not treat jaundice and can reduce milk intake."], ["Ask for latch support", "A midwife or nurse can help if feeds are painful, short, or ineffective."]] },
@@ -629,17 +665,17 @@ function CareGuide() {
   return <section className="guide-panel"><div><p className="eyebrow">Care guide</p><h2>Short guidance for the moments that matter.</h2></div><div className="guide-tabs">{Object.entries(sections).map(([key, value]) => <button className={key === active ? "guide-tab-active" : ""} onClick={() => { setActive(key); setOpen(null); }} key={key}>{value.title}</button>)}</div><p className="guide-intro">{section.intro}</p>{section.items.map(([title, body], index) => <article className="guide-item" key={title}><button onClick={() => setOpen(open === index ? null : index)}><strong>{title}</strong><span>{open === index ? "−" : "+"}</span></button>{open === index && <p>{body}</p>}</article>)}</section>;
 }
 
-function CommunityCare({ history, queueCount, setTab }) {
+function CommunityCare({ history, queueCount, setTab, t }) {
   const urgent = history.filter((item) => item.final_decision?.includes("URGENT")).length;
   const sameDay = history.filter((item) => item.final_decision?.includes("SAME_DAY") || item.final_decision?.includes("RECHECK")).length;
-  return <section className="community-panel"><div className="community-hero"><div><p className="eyebrow">Community care workflow</p><h2>One guided conversation. One safe next step.</h2><p>Use this workspace for assisted checks. It stores only screenings created by this community account; it does not reveal another parent’s private records.</p></div><button className="button" onClick={() => setTab("screen")}>Start assisted screening</button></div><div className="metric-grid"><Metric label="Checks recorded" value={history.length} tone="monitor" /><Metric label="Urgent outcomes" value={urgent} tone="urgent" /><Metric label="Same-day outcomes" value={sameDay} tone="same-day" /><Metric label="Queued offline" value={queueCount} tone="monitor" /></div><section className="care-reminder"><strong>For every urgent result:</strong> explain the next action simply, support the caregiver to reach an appropriate facility, and do not wait for an assistant response.</section>{history.length > 0 && <HistoryList items={history.slice(0, 5)} />}</section>;
+  return <section className="community-panel"><div className="community-hero"><div><p className="eyebrow">{t("chw.tag", "Community care workflow")}</p><h2>{t("chw.title", "One guided conversation. One safe next step.")}</h2><p>{t("chw.intro", "Use this workspace for assisted checks. It stores only screenings created by this community account; it does not reveal another parent’s private records.")}</p></div><button className="button" onClick={() => setTab("screen")}>{t("chw.actions.screening", "Start assisted screening")}</button></div><div className="metric-grid"><Metric label="Checks recorded" value={history.length} tone="monitor" /><Metric label="Urgent outcomes" value={urgent} tone="urgent" /><Metric label="Same-day outcomes" value={sameDay} tone="same-day" /><Metric label="Queued offline" value={queueCount} tone="monitor" /></div><section className="care-reminder"><strong>For every urgent result:</strong> explain the next action simply, support the caregiver to reach an appropriate facility, and do not wait for an assistant response.</section>{history.length > 0 && <HistoryList items={history.slice(0, 5)} t={t} />}</section>;
 }
 
 function Metric({ label, value, tone }) {
   return <article className={`metric-card ${tone}`}><strong>{value}</strong><span>{label}</span></article>;
 }
 
-function CommunityAnalytics({ history }) {
+function CommunityAnalytics({ history, t }) {
   const summary = useMemo(() => {
     const counts = { urgent: 0, sameDay: 0, monitor: 0 };
     history.forEach((item) => {
@@ -654,7 +690,7 @@ function CommunityAnalytics({ history }) {
   return <section className="analytics-panel"><div><p className="eyebrow">My activity</p><h2>Assisted screening summary</h2><p>This summary includes only screenings recorded by this signed-in community account. It is not a population health report.</p></div><div className="metric-grid"><Metric label="Total checks" value={total} tone="monitor" /><Metric label="Urgent" value={summary.urgent} tone="urgent" /><Metric label="Same-day" value={summary.sameDay} tone="same-day" /></div><section className="distribution-card"><h3>Outcome distribution</h3>{total === 0 ? <p>No assisted screenings have been recorded yet.</p> : rows.map(([label, count, tone]) => <div className="distribution-row" key={label}><span>{label}</span><div><i className={tone} style={{ width: `${(count / total) * 100}%` }} /></div><strong>{count}</strong></div>)}</section></section>;
 }
 
-function BhutaniReference() {
+function BhutaniReference({ t }) {
   const [ageHours, setAgeHours] = useState("");
   const [bilirubin, setBilirubin] = useState("");
   const result = assessBhutaniZone(ageHours, bilirubin);
@@ -687,13 +723,13 @@ function AssistantHub({ t }) {
     }
   };
 
-  return <aside className={`chat-widget ${open ? "chat-open" : ""}`}><button className="chat-toggle" onClick={() => setOpen(!open)}>{open ? "Close assistants" : "Ask an assistant"}</button>{open && <div className="chat-body"><div className="assistant-tabs"><button className={assistant === "mamabot" ? "assistant-active" : ""} onClick={() => setAssistant("mamabot")}>MamaBot</button><button className={assistant === "vaxai" ? "assistant-active" : ""} onClick={() => setAssistant("vaxai")}>VaxAI</button></div><p><strong>{labels[assistant]}</strong><br />{assistant === "mamabot" ? "Newborn-care education support." : "Childhood vaccination education support."}</p><div className="suggestion-row">{suggestions.map((suggestion) => <button disabled={busy} key={suggestion} onClick={() => void sendQuestion(suggestion)}>{suggestion}</button>)}</div><div className="chat-messages" aria-live="polite">{chats[assistant].length === 0 && <span>Choose a suggested question or type your own below.</span>}{chats[assistant].map((item, index) => <p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{busy && <span>Thinking…</span>}</div><form onSubmit={(event) => { event.preventDefault(); void sendQuestion(message); }}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Type your question" disabled={busy} /><button aria-label="Send question" disabled={busy}>↑</button></form><small>{t("trust.title", "This is a screening support tool.")}</small></div>}</aside>;
+  return <aside className={`chat-widget ${open ? "chat-open" : ""}`}><button className="chat-toggle" onClick={() => setOpen(!open)}>{open ? t("web.chat.close", "Close assistants") : t("web.chat.open", "Ask an assistant")}</button>{open && <div className="chat-body"><div className="assistant-tabs"><button className={assistant === "mamabot" ? "assistant-active" : ""} onClick={() => setAssistant("mamabot")}>MamaBot</button><button className={assistant === "vaxai" ? "assistant-active" : ""} onClick={() => setAssistant("vaxai")}>VaxAI</button></div><p><strong>{labels[assistant]}</strong><br />{assistant === "mamabot" ? "Newborn-care education support." : "Childhood vaccination education support."}</p><div className="suggestion-row">{suggestions.map((suggestion) => <button disabled={busy} key={suggestion} onClick={() => void sendQuestion(suggestion)}>{suggestion}</button>)}</div><div className="chat-messages" aria-live="polite">{chats[assistant].length === 0 && <span>{t("web.chat.empty", "Choose a suggested question or type your own below.")}</span>}{chats[assistant].map((item, index) => <p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{busy && <span>{t("web.chat.thinking", "Thinking…")}</span>}</div><form onSubmit={(event) => { event.preventDefault(); void sendQuestion(message); }}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("web.chat.placeholder", "Type your question")} disabled={busy} /><button aria-label="Send question" disabled={busy}>↑</button></form><small>{t("trust.title", "This is a screening support tool.")}</small></div>}</aside>;
 }
 
 function Field({ label, children }) { return <label className="form-field"><span>{label}</span>{children}</label>; }
 function LoadingCard({ label }) { return <section className="loading-card"><span className="spinner" />{label}</section>; }
 function decisionTone(value) { return value?.includes("URGENT") ? "urgent" : value?.includes("SAME_DAY") || value?.includes("RECHECK") ? "same-day" : "monitor"; }
-function decisionLabel(value) { return ({ URGENT_HOSPITAL_REVIEW: "Seek urgent hospital care", SAME_DAY_CLINIC_REVIEW: "Arrange same-day assessment", RECHECK_SOON_OR_CLINIC_IF_CONCERNED: "Arrange same-day assessment", HOME_MONITORING: "Monitor closely at home" })[value] || "Review screening guidance"; }
+function decisionLabel(value, t = (_key, fallback) => fallback) { return ({ URGENT_HOSPITAL_REVIEW: t("status.urgent", "Seek urgent hospital care"), SAME_DAY_CLINIC_REVIEW: t("status.same_day", "Arrange same-day assessment"), RECHECK_SOON_OR_CLINIC_IF_CONCERNED: t("status.same_day", "Arrange same-day assessment"), HOME_MONITORING: t("status.monitor", "Monitor closely at home") })[value] || t("result.title", "Review screening guidance"); }
 
 function LegalPage({ type, navigate }) {
   const isPrivacy = type === "privacy";

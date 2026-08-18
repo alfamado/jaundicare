@@ -188,7 +188,7 @@
   "chw.tag": "Tallafin jinjiri a al'umma",
   "chw.title": "Yanayin Kulawa na Al'umma",
   "chw.intro": "Tsarin ma'aikacin lafiya na al'umma don taimaka wa iyaye wajen gwajin jaundice da tunatarwa.",
-  "chw.badge": "Hanyar kulawa ta HelpMum",
+  "chw.badge": "Hanyar kula da jarirai a al'umma",
 
   "chw.actions.title": "Matakai na sauri",
   "chw.actions.screening": "Fara gwaji da taimako",
@@ -240,5 +240,23 @@
 
   "parent.message.urgent": "Tafi da jaririnka asibiti yanzu. Kada ka yi jinkiri. Wannan sakamakon yana bukatar taimakon likita na gaggawa a yau dinnan.",
   "parent.message.same_day": "Yana da kyau likita ko ma'aikacin lafiya ya duba jaririnka a yau dinnan. Don Allah kada ka jira har sai gobe.",
-  "parent.message.monitor": "Jaririnka yana da kyau a halin yanzu. Ci gaba da ba shi nono akai-akai, sannan ka lura da idanu ko fata idan sun yi rawaya, sannan ka sake gwaji idan ka ga wani canji."
+  "parent.message.monitor": "Jaririnka yana da kyau a halin yanzu. Ci gaba da ba shi nono akai-akai, sannan ka lura da idanu ko fata idan sun yi rawaya, sannan ka sake gwaji idan ka ga wani canji.",
+
+  "web.result.urgent_heading": "Nemi kulawa yanzu",
+  "web.result.same_day_heading": "Shirya a duba jariri yau",
+  "web.result.monitor_heading": "Ci gaba da sa ido sosai",
+  "web.result.urgent_detail": "Alamar hatsari ga jariri na bukatar a duba shi yanzu.",
+  "web.result.same_day_detail": "Ya kamata ma'aikacin lafiya ya duba jaririn yau.",
+  "web.result.directions": "Nemi hanya",
+  "web.consent.title": "Na zaɓi: taimaka a inganta JaundiCare",
+  "web.consent.text": "Idan ka zaɓa, ana iya ajiye wannan hoton cikin wurin kariya don tabbatarwa da inganta samfurin. Ba a buƙatarsa don sakamakon ko bayanin kulawa, kuma za ka iya cire shi daga baya.",
+  "web.consent.remove_prompt": "A cire wannan hoton horo? Sakamakon binciken zai ci gaba da kasancewa.",
+  "web.consent.stored": "An ajiye hoton da izininka domin taimakawa wajen inganta samfurin.",
+  "web.consent.remove": "Cire wannan hoton horo",
+  "web.consent.removed": "An cire hoton horo.",
+  "web.chat.placeholder": "Rubuta tambayarka",
+  "web.chat.empty": "Zaɓi tambayar da aka ba da shawara ko rubuta taka a ƙasa.",
+  "web.chat.thinking": "Ana tunani…",
+  "web.chat.open": "Tambayi mai taimako",
+  "web.chat.close": "Rufe masu taimako"
 }

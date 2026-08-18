@@ -188,7 +188,7 @@
   "chw.tag": "Ìtìlẹ́yìn ọmọ tuntun ní àdúgbò",
   "chw.title": "Ojú Ìtọ́jú Àdúgbò",
   "chw.intro": "Ìgbésẹ̀ fún àwọn òṣìṣẹ́ ìlera àdúgbò láti ran àwọn òbí lọ́wọ́ nínú ayẹwo ibà rẹ́re ati ìtọ́sọ́nà.",
-  "chw.badge": "Ilana ìtọ́jú tó bá HelpMum mu",
+  "chw.badge": "Ìlànà ìtọ́jú ọmọ tuntun ní àdúgbò",
 
   "chw.actions.title": "Ìgbésẹ̀ kíákíá",
   "chw.actions.screening": "Bẹ̀rẹ̀ ayẹwo pẹ̀lú ìrànlọ́wọ́",
@@ -240,5 +240,23 @@
 
   "parent.message.urgent": "Gbé ọmọ rẹ lọ sí ilé-ìwòsàn (hospitu) báyìí. Má ṣe dúró rárá. Àbájáde yìí nílò ìtọ́jú dókítà ní kíákíá lọ́jọ́ òní.",
   "parent.message.same_day": "Ó ṣe pàtàkì kí dókítà tàbí òṣìṣẹ́ ìlera yẹ ọmọ rẹ wò lọ́jọ́ òní. Jọ̀wọ́ má ṣe dúró di ọ̀la.",
-  "parent.message.monitor": "Ọmọ rẹ dàbí ẹni pé ó wà ní àlàáfíà fún ìsinsìnyí. Tẹ̀síwájú láti máa fún ọmọ ní nkan mu dáadáa, ṣọ́ bí ojú tàbí ara rẹ̀ bá pọ́n fúfú (rawaya), kí o sì tún ayẹwo ṣe bí nkan bá yípadà."
+  "parent.message.monitor": "Ọmọ rẹ dàbí ẹni pé ó wà ní àlàáfíà fún ìsinsìnyí. Tẹ̀síwájú láti máa fún ọmọ ní nkan mu dáadáa, ṣọ́ bí ojú tàbí ara rẹ̀ bá pọ́n fúfú (rawaya), kí o sì tún ayẹwo ṣe bí nkan bá yípadà.",
+
+  "web.result.urgent_heading": "Jọ̀wọ́ wá ìtọ́jú báyìí",
+  "web.result.same_day_heading": "Jọ̀wọ́ ṣètò ìtọ́jú lónìí",
+  "web.result.monitor_heading": "Máa ṣàbójútó ọmọ rẹ̀ dáadáa",
+  "web.result.urgent_detail": "Àmì ewu ọmọ tuntun nílò ìtọ́jú ìṣègùn báyìí.",
+  "web.result.same_day_detail": "Òṣìṣẹ́ ìlera gbọ́dọ̀ ṣàyẹ̀wò ọmọ rẹ lónìí.",
+  "web.result.directions": "Wá ọ̀nà lọ síbẹ̀",
+  "web.consent.title": "Àyànfẹ́: ran JaundiCare lọ́wọ́ láti sunwọ̀n sí i",
+  "web.consent.text": "Tí o bá yàn bẹ́ẹ̀, a lè fi fọ́tò yìí pamọ́ níbi ààbò fún ìmúdájú àti ìmúgbòòrò ẹ̀rọ. Kò ṣe pàtàkì fún àbájáde tàbí ìtọ́jú ọmọ rẹ, o sì lè yọ ó kúrò nígbàkigbà.",
+  "web.consent.remove_prompt": "Ṣe o fẹ́ yọ fọ́tò ìkẹ́kọ̀ọ́ yìí? Àbájáde ìṣàyẹ̀wò rẹ yóò wà.",
+  "web.consent.stored": "A fi fọ́tò yìí pamọ́ pẹ̀lú ìyọ̀nda rẹ láti ràn ẹ̀rọ lọ́wọ́ láti sunwọ̀n sí i.",
+  "web.consent.remove": "Yọ fọ́tò ìkẹ́kọ̀ọ́ yìí",
+  "web.consent.removed": "A ti yọ fọ́tò ìkẹ́kọ̀ọ́ náà.",
+  "web.chat.placeholder": "Kọ ìbéèrè rẹ",
+  "web.chat.empty": "Yan ìbéèrè àpẹẹrẹ tàbí kọ ìbéèrè tirẹ ní ìsàlẹ̀.",
+  "web.chat.thinking": "Ń ronú…",
+  "web.chat.open": "Bi olùrànlọ́wọ́ kan",
+  "web.chat.close": "Tì àwọn olùrànlọ́wọ́ pa"
 }

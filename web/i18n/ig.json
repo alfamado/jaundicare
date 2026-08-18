@@ -188,7 +188,7 @@
   "chw.tag": "Nkwado nwa ọhụrụ n'obodo",
   "chw.title": "Yanayin Nlekọta Obodo",
   "chw.intro": "Ụzọ onye ọrụ ahụike obodo si enyere ndị nne na nna aka inyocha jaundice.",
-  "chw.badge": "Ụzọ nlekọta HelpMum kwadoro",
+  "chw.badge": "Ụzọ nlekọta nwa ọhụrụ n'obodo",
 
   "chw.actions.title": "Ihe ị ga-eme ngwa ngwa",
   "chw.actions.screening": "Malite nnyocha nkwado",
@@ -240,5 +240,23 @@
 
   "parent.message.urgent": "Kpụga nwa gị n'ụlọ ọgwụ ozugbo. Egbula oge. Nsonaazụ a chọrọ nlebanya dọkịta ngwa ngwa n'ụbọchị taa.",
   "parent.message.same_day": "Ọ dị mkpa ka dọkịta ma ọ bụ onye ọrụ ahụike hụ nwa gị taa. Biko echerela ruo echi.",
-  "parent.message.monitor": "Nwa gị dị mma maka ugbu a. Gaa n'ihu na-enye ya nri mgbe niile, na-elele ma anya ya ma ọ bụ ahụ ya ọ na-acha odo odo, ma nyochaa ya ọzọ ma ọ bụrụ na ihe agbanwee."
+  "parent.message.monitor": "Nwa gị dị mma maka ugbu a. Gaa n'ihu na-enye ya nri mgbe niile, na-elele ma anya ya ma ọ bụ ahụ ya ọ na-acha odo odo, ma nyochaa ya ọzọ ma ọ bụrụ na ihe agbanwee.",
+
+  "web.result.urgent_heading": "Chọọ nlekọta ugbu a",
+  "web.result.same_day_heading": "Hazie nlele taa",
+  "web.result.monitor_heading": "Nọgide na-elele nke ọma",
+  "web.result.urgent_detail": "Ihe ịrịba ama ize ndụ nwa ọhụrụ chọrọ nlele ahụike ugbu a.",
+  "web.result.same_day_detail": "Onye ọrụ ahụike kwesịrị inyocha nwa gị taa.",
+  "web.result.directions": "Chọta ụzọ",
+  "web.consent.title": "Nhọrọ: nyere aka ime JaundiCare ka mma",
+  "web.consent.text": "Ọ bụrụ na ị họrọ ee, enwere ike idowe foto a n'ebe nchekwa iji nyochaa ma melite ụdị ahụ. Ọ dịghị mkpa maka nsonaazụ ma ọ bụ nduzi nlekọta a, ị nwere ike wepụ ya emechaa.",
+  "web.consent.remove_prompt": "Wepụ foto ọzụzụ a? Nsonaazụ nyocha gị ka ga-adị.",
+  "web.consent.stored": "Edebere foto a site n'ikike gị iji nyere aka ime ụdị ahụ ka mma.",
+  "web.consent.remove": "Wepụ foto ọzụzụ a",
+  "web.consent.removed": "Ewepụla foto ọzụzụ ahụ.",
+  "web.chat.placeholder": "Dee ajụjụ gị",
+  "web.chat.empty": "Họrọ ajụjụ atụ aro ma ọ bụ dee nke gị n'okpuru.",
+  "web.chat.thinking": "Na-eche echiche…",
+  "web.chat.open": "Jụọ onye enyemaka",
+  "web.chat.close": "Mechie ndị enyemaka"
 }

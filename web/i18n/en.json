@@ -189,7 +189,7 @@
   "chw.tag": "Community newborn support",
   "chw.title": "Community Care Mode",
   "chw.intro": "A community health worker workflow for assisted newborn jaundice screening, follow-up reminders, maternal education, and referral support.",
-  "chw.badge": "HelpMum-aligned care pathway",
+  "chw.badge": "Community newborn care pathway",
 
   "chw.actions.title": "Quick actions",
   "chw.actions.screening": "Start assisted screening",
@@ -241,5 +241,23 @@
 
   "parent.message.urgent": "Take your baby to a hospital now. Do not wait. This result needs immediate medical attention today.",
   "parent.message.same_day": "Your baby needs to be seen by a doctor or health worker today. Please do not wait until tomorrow.",
-  "parent.message.monitor": "Your baby looks okay for now. Keep feeding regularly, watch for yellowing in the eyes and skin, and recheck if anything changes."
+  "parent.message.monitor": "Your baby looks okay for now. Keep feeding regularly, watch for yellowing in the eyes and skin, and recheck if anything changes.",
+
+  "web.result.urgent_heading": "Please seek care now",
+  "web.result.same_day_heading": "Please arrange care today",
+  "web.result.monitor_heading": "Keep monitoring closely",
+  "web.result.urgent_detail": "A newborn danger sign needs medical assessment now.",
+  "web.result.same_day_detail": "A health worker should assess your baby today.",
+  "web.result.directions": "Get directions",
+  "web.consent.title": "Optional: help improve JaundiCare",
+  "web.consent.text": "If you choose yes, this photo may be placed in protected training storage to validate and improve the model. It is not needed for this result or care guidance. You can remove it later.",
+  "web.consent.remove_prompt": "Remove this training photo? Your screening result will remain available.",
+  "web.consent.stored": "This photo was stored with your permission to help improve the model.",
+  "web.consent.remove": "Remove this training photo",
+  "web.consent.removed": "Training photo removed.",
+  "web.chat.placeholder": "Type your question",
+  "web.chat.empty": "Choose a suggested question or type your own below.",
+  "web.chat.thinking": "Thinking…",
+  "web.chat.open": "Ask an assistant",
+  "web.chat.close": "Close assistants"
   }

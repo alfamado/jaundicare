@@ -188,7 +188,7 @@
   "chw.tag": "Community support for newborn",
   "chw.title": "Community Care Mode",
   "chw.intro": "How health workers for community fit help parents check jaundice and give advice.",
-  "chw.badge": "HelpMum-aligned care pathway",
+  "chw.badge": "Community newborn care pathway",
 
   "chw.actions.title": "Quick actions",
   "chw.actions.screening": "Start assisted check-up",
@@ -240,5 +240,23 @@
 
   "parent.message.urgent": "Carry your pikin go hospital now now. No wait at all. This result need urgent doctor help today today.",
   "parent.message.same_day": "Doctor or health worker suppose see your pikin today. Abeg no wait reach tomorrow.",
-  "parent.message.monitor": "Your pikin look okay for now. Keep feeding am well, watch if im eyes or skin yellow, and check am again if anything change."
+  "parent.message.monitor": "Your pikin look okay for now. Keep feeding am well, watch if im eyes or skin yellow, and check am again if anything change.",
+
+  "web.result.urgent_heading": "Abeg go hospital now",
+  "web.result.same_day_heading": "Arrange make dem check baby today",
+  "web.result.monitor_heading": "Keep watching baby well",
+  "web.result.urgent_detail": "Danger sign for newborn need medical check now.",
+  "web.result.same_day_detail": "Health worker suppose check your baby today.",
+  "web.result.directions": "See road go there",
+  "web.consent.title": "Na your choice: help JaundiCare better",
+  "web.consent.text": "If you choose yes, we fit keep this photo for protected place to check and improve the model. E no need am for this result or care advice, and you fit remove am later.",
+  "web.consent.remove_prompt": "Remove this training photo? Your screening result go still dey.",
+  "web.consent.stored": "We keep this photo with your permission to help improve the model.",
+  "web.consent.remove": "Remove this training photo",
+  "web.consent.removed": "Training photo don remove.",
+  "web.chat.placeholder": "Type your question",
+  "web.chat.empty": "Choose suggested question or type your own below.",
+  "web.chat.thinking": "Dey think…",
+  "web.chat.open": "Ask assistant",
+  "web.chat.close": "Close assistants"
 }
