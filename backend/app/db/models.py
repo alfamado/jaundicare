@@ -514,6 +514,35 @@ class OtpRequestAudit(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class ConsultationRequestAudit(Base):
+    """Minimal, short-lived audit trail for assistant abuse protection.
+
+    The message itself is intentionally never persisted or logged. The table
+    contains only the user, assistant name and timestamp required to apply a
+    distributed rate limit across API workers.
+    """
+
+    __tablename__ = "consultation_request_audits"
+    __table_args__ = (
+        Index(
+            "ix_consultation_request_audits_user_assistant_created",
+            "user_id",
+            "assistant",
+            "created_at",
+        ),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    assistant = Column(String(20), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 # ── REFRESH TOKENS ───────────────────────────────────────────
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"

@@ -1,4 +1,6 @@
-const CACHE_NAME = "jaundicare-web-shell-v1";
+// Bump this whenever shell assets or language/audio handling changes. It
+// forces browsers that installed the old two-language web shell to discard it.
+const CACHE_NAME = "jaundicare-web-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add("/")).then(() => self.skipWaiting()));

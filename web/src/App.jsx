@@ -17,6 +17,8 @@ import yorubaTranslations from "../i18n/yo.json";
 import hausaTranslations from "../i18n/ha.json";
 import igboTranslations from "../i18n/ig.json";
 import pidginTranslations from "../i18n/pcm.json";
+import { uiTranslations } from "./uiTranslations";
+import { legalContent } from "./legalContent";
 
 const languages = [
   ["en", "English"],
@@ -65,8 +67,25 @@ function usePath() {
 }
 
 function useTranslations(language) {
-  const translations = translationCatalog[language] || translationCatalog.en;
-  return (key, fallback) => translations[key] || translationCatalog.en[key] || fallback || key;
+  const translations = {
+    ...(translationCatalog[language] || translationCatalog.en),
+    ...(uiTranslations[language] || uiTranslations.en),
+  };
+
+  const resolve = (dictionary, key) => {
+    const direct = dictionary[key];
+    if (typeof direct === "string") return direct;
+    const nested = key.split(".").reduce(
+      (value, segment) => value && typeof value === "object" ? value[segment] : undefined,
+      dictionary,
+    );
+    return typeof nested === "string" ? nested : undefined;
+  };
+
+  return (key, fallback, values) => {
+    const text = resolve(translations, key) || resolve({ ...translationCatalog.en, ...uiTranslations.en }, key) || fallback || key;
+    return text.replace(/\{(\w+)\}/g, (_, name) => values?.[name] === undefined ? `{${name}}` : String(values[name]));
+  };
 }
 
 function formatNigerianPhone(value) {
@@ -107,9 +126,9 @@ function App() {
       <SiteHeader language={language} onLanguageChange={changeLanguage} navigate={navigate} page={page} t={t} />
       {page === "/" && <Landing navigate={navigate} t={t} language={language} />}
       {page === "/app" && <WebPortal language={language} t={t} navigate={navigate} />}
-      {page === "/privacy" && <LegalPage type="privacy" navigate={navigate} />}
-      {page === "/terms" && <LegalPage type="terms" navigate={navigate} />}
-      <SiteFooter navigate={navigate} />
+      {page === "/privacy" && <LegalPage type="privacy" navigate={navigate} t={t} language={language} />}
+      {page === "/terms" && <LegalPage type="terms" navigate={navigate} t={t} language={language} />}
+      <SiteFooter navigate={navigate} t={t} />
     </div>
   );
 }
@@ -126,7 +145,7 @@ function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
       </button>
       <nav className="site-nav" aria-label="Main navigation">
         <button onClick={() => navigate("/")}>{t("dashboard.learn_jaundice", "How it works")}</button>
-        <button onClick={() => navigate("/privacy")}>Privacy</button>
+        <button onClick={() => navigate("/privacy")}>{t("ui.legal.privacy", "Privacy")}</button>
         <button className={page === "/app" ? "nav-active" : ""} onClick={() => navigate("/app")}>{t("dashboard.start_check", "Open web app")}</button>
       </nav>
       <div className="header-actions">
@@ -159,7 +178,7 @@ function Landing({ navigate, t, language }) {
               <button className="button button-secondary" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Start a baby check")}</button>
             )}
           </div>
-          <p className="hero-note">Available in English, Yorùbá, Hausa, Igbo and Nigerian Pidgin.</p>
+          <p className="hero-note">{t("ui.onboarding.choose_language", "Choose your language")}: English, Yorùbá, Hausa, Igbo, Pidgin.</p>
           <WelcomeAudioButton language={language} t={t} />
         </div>
         <div className="hero-visual" aria-label="Simple illustration of parent support">
@@ -176,7 +195,7 @@ function Landing({ navigate, t, language }) {
 
       <section className="safety-banner" aria-label="Clinical safety information">
         <span className="safety-icon">!</span>
-        <p><strong>Important:</strong> JaundiCare is a screening and care-support tool. It does not diagnose jaundice or replace a clinician, bilirubin test, or urgent medical care.</p>
+        <p><strong>{t("trust.title", "Important")}</strong> {t("ui.onboarding.safety", "JaundiCare is a screening and care-support tool. It does not diagnose jaundice or replace a clinician, bilirubin test, or urgent medical care.")}</p>
       </section>
 
       <section className="section-wrap">
@@ -248,13 +267,13 @@ function WelcomeAudioButton({ language, t }) {
       setPlaying(true);
       await playWelcomeAudio(language);
     } catch {
-      setError("Audio could not start. Please tap Listen again.");
+      setError(t("ui.onboarding.tap_audio", "Audio could not start. Please tap Listen again."));
     } finally {
       setPlaying(false);
     }
   };
 
-  return <div className="audio-guide"><button className="text-button audio-button" type="button" onClick={play}>{playing ? t("voice.playing", "Starting audio…") : `▶ ${t("voice.play", "Listen to welcome guidance")}`}</button>{error && <small>{error}</small>}</div>;
+  return <div className="audio-guide"><button className="text-button audio-button" type="button" onClick={play}>{playing ? t("voice.playing", "Starting audio…") : `▶ ${t("ui.onboarding.tap_audio", "Listen to welcome guidance")}`}</button>{error && <small>{error}</small>}</div>;
 }
 
 function WebPortal({ language, t, navigate }) {
@@ -297,13 +316,13 @@ function AuthCard({ language, t, onVerified, navigate }) {
     event.preventDefault();
     setError("");
     if (!/^234\d{10}$/.test(normalisedPhone)) {
-      setError("Enter a Nigerian mobile number, for example 08012345678.");
+      setError(t("ui.auth.invalid_phone", "Enter a Nigerian mobile number, for example 08012345678."));
       return;
     }
     setBusy(true);
     try {
       const result = await requestOtp({ phoneNumber: normalisedPhone, language, role });
-      setNotice(result.message || "Verification code sent.");
+      setNotice(result.message || t("ui.auth.send_code", "Verification code sent."));
       setStep("code");
     } catch (requestError) {
       setError(requestError.message);
@@ -316,7 +335,7 @@ function AuthCard({ language, t, onVerified, navigate }) {
     event.preventDefault();
     setError("");
     if (!/^\d{6}$/.test(code)) {
-      setError("Enter the six-digit verification code.");
+      setError(t("ui.auth.enter_code", "Enter the six-digit verification code."));
       return;
     }
     setBusy(true);
@@ -338,24 +357,24 @@ function AuthCard({ language, t, onVerified, navigate }) {
     <section className="auth-layout">
       <div className="auth-intro">
         <p className="eyebrow">{t("topbar.support", "Secure web access")}</p>
-        <h1>{t("dashboard.hero_title", "Your newborn support, when you need it.")}</h1>
-        <p>Sign in with your phone number. Your records remain private to your account.</p>
+        <h1>{t("ui.auth.welcome", "Your newborn support, when you need it.")}</h1>
+        <p>{t("ui.auth.phone_privacy", "Sign in with your phone number. Your records remain private to your account.")}</p>
         <button className="text-button inverse" onClick={() => navigate("/")}>← {t("dashboard.learn_jaundice", "Back to information page")}</button>
       </div>
       <form className="auth-card" onSubmit={step === "phone" ? sendCode : confirmCode}>
-        <p className="eyebrow">{step === "phone" ? "Step 1 of 2" : "Step 2 of 2"}</p>
-        <h2>{step === "phone" ? "Enter your phone number" : "Enter your verification code"}</h2>
-        <p>{step === "phone" ? "We will send a one-time code to continue." : `We sent a code to ${phone}.`}</p>
+        <p className="eyebrow">{step === "phone" ? "1 / 2" : "2 / 2"}</p>
+        <h2>{step === "phone" ? t("ui.auth.phone_title", "Enter your phone number") : t("ui.auth.enter_code", "Enter your verification code")}</h2>
+        <p>{step === "phone" ? t("ui.auth.phone_intro", "We will send a one-time code to continue.") : `${t("ui.auth.sent_code", "We sent a code to")} ${phone}.`}</p>
         {step === "phone" ? (
-          <><label className="form-field"><span>Phone number</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>{allowDemoRoleSelection && <label className="form-field"><span>Demo workspace</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="parent">{t("mode.parent", "Parent support")}</option><option value="health_worker">{t("mode.health_worker", "Community care")}</option></select><small>This choice is available only for approved demonstration phones.</small></label>}</>
+          <><label className="form-field"><span>{t("ui.auth.phone_number", "Phone number")}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>{allowDemoRoleSelection && <label className="form-field"><span>Demo workspace</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="parent">{t("ui.onboarding.parent", "Parent support")}</option><option value="health_worker">{t("ui.onboarding.health_worker", "Community care")}</option></select><small>This choice is available only for approved demonstration phones.</small></label>}</>
         ) : (
-          <label className="form-field"><span>Six-digit code</span><input autoFocus autoComplete="one-time-code" inputMode="numeric" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} placeholder="123456" /></label>
+          <label className="form-field"><span>{t("ui.auth.enter_code", "Six-digit code")}</span><input autoFocus autoComplete="one-time-code" inputMode="numeric" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} placeholder="123456" /></label>
         )}
         {notice && <p className="notice success">{notice}</p>}
         {error && <p className="notice error" role="alert">{error}</p>}
-        <button className="button full-width" type="submit" disabled={busy}>{busy ? "Please wait…" : step === "phone" ? "Send verification code" : "Continue securely"}</button>
-        {step === "code" && <button className="text-button" type="button" onClick={() => { setStep("phone"); setCode(""); setError(""); }}>Use a different number</button>}
-        <p className="form-footnote">By continuing, you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Notice</a>.</p>
+        <button className="button full-width" type="submit" disabled={busy}>{busy ? t("ui.auth.verifying", "Please wait…") : step === "phone" ? t("ui.auth.send_code", "Send verification code") : t("ui.onboarding.continue", "Continue securely")}</button>
+        {step === "code" && <button className="text-button" type="button" onClick={() => { setStep("phone"); setCode(""); setError(""); }}>{t("ui.auth.resend", "Use a different number")}</button>}
+        <p className="form-footnote">By continuing, you agree to the <a href="/terms">{t("ui.legal.terms", "Terms")}</a> and <a href="/privacy">{t("ui.legal.privacy", "Privacy Notice")}</a>.</p>
       </form>
     </section>
   );
@@ -655,9 +674,33 @@ function HistoryList({ items, t }) {
 
 function CareGuide({ t }) {
   const sections = {
-    warning: { title: "Warning signs", intro: "Seek urgent medical care if you notice any of these signs.", items: [["Baby is very hard to wake", "A baby who cannot be woken for feeds or is limp needs urgent assessment."], ["Yellowing in the first 24 hours", "Any yellowing in the first day needs hospital assessment today."], ["Dark urine or pale stool", "Dark urine or very pale stool can point to a serious problem and needs urgent review."]] },
-    feeding: { title: "Feeding support", intro: "Frequent effective feeding helps newborns clear bilirubin.", items: [["Feed 8 to 12 times in 24 hours", "Offer breastfeeds often. Wake a sleepy baby for feeds."], ["Do not give water", "Water does not treat jaundice and can reduce milk intake."], ["Ask for latch support", "A midwife or nurse can help if feeds are painful, short, or ineffective."]] },
-    myths: { title: "Common myths", intro: "Simple facts can prevent harmful delays.", items: [["Do not use direct sunlight as treatment", "Sunlight is not a controlled substitute for prescribed phototherapy and can burn or dehydrate a newborn."], ["Avoid herbs or herbal baths", "They have not been shown to lower bilirubin and may harm a newborn."], ["Check eyes and gums on darker skin", "Yellowing can be harder to see on the skin. Check eyes, gums, palms and soles too."]] },
+    warning: {
+      title: t("edu.urgent.title", "Warning signs"),
+      intro: t("next.urgent.3", "Seek urgent medical care if you notice any of these signs."),
+      items: [
+        [t("edu.urgent.2", "Baby is very hard to wake"), t("next.urgent.3", "A baby who cannot be woken for feeds or is limp needs urgent assessment.")],
+        [t("edu.urgent.1", "Yellowing in the first 24 hours"), t("next.urgent.1", "Any yellowing in the first day needs hospital assessment today.")],
+        [t("edu.urgent.5", "Dark urine or pale stool"), t("next.urgent.3", "Dark urine or very pale stool can point to a serious problem and needs urgent review.")],
+      ],
+    },
+    feeding: {
+      title: t("care.feeding.title", "Feeding support"),
+      intro: t("care.feeding.body", "Frequent effective feeding helps newborns clear bilirubin."),
+      items: [
+        [t("care.feeding.1", "Feed regularly"), t("care.feeding.body", "Offer breastfeeds often. Wake a sleepy baby for feeds.")],
+        [t("care.feeding.2", "Watch for poor sucking"), t("next.same_day.2", "Water does not treat jaundice and can reduce milk intake.")],
+        [t("care.feeding.3", "Seek help early if feeds are being missed"), t("next.same_day.1", "A midwife or nurse can help if feeds are painful, short, or ineffective.")],
+      ],
+    },
+    education: {
+      title: t("education.title", "Newborn care"),
+      intro: t("edu.what_is.body", "Simple facts can prevent harmful delays."),
+      items: [
+        [t("edu.what_not_to_do.3", "Do not use direct sunlight as treatment"), t("edu.what_not_to_do.3", "Sunlight is not a controlled substitute for prescribed phototherapy.")],
+        [t("edu.dark_skin.title", "Check eyes and gums on darker skin"), t("edu.dark_skin.body", "Yellowing can be harder to see on the skin. Check eyes, gums, palms and soles too.")],
+        [t("edu.what_to_do.title", "What parents should do"), t("edu.what_to_do.4", "Seek same-day review if warning signs appear.")],
+      ],
+    },
   };
   const [active, setActive] = useState("warning");
   const [open, setOpen] = useState(null);
@@ -731,14 +774,14 @@ function LoadingCard({ label }) { return <section className="loading-card"><span
 function decisionTone(value) { return value?.includes("URGENT") ? "urgent" : value?.includes("SAME_DAY") || value?.includes("RECHECK") ? "same-day" : "monitor"; }
 function decisionLabel(value, t = (_key, fallback) => fallback) { return ({ URGENT_HOSPITAL_REVIEW: t("status.urgent", "Seek urgent hospital care"), SAME_DAY_CLINIC_REVIEW: t("status.same_day", "Arrange same-day assessment"), RECHECK_SOON_OR_CLINIC_IF_CONCERNED: t("status.same_day", "Arrange same-day assessment"), HOME_MONITORING: t("status.monitor", "Monitor closely at home") })[value] || t("result.title", "Review screening guidance"); }
 
-function LegalPage({ type, navigate }) {
-  const isPrivacy = type === "privacy";
-  return <main className="legal-page"><p className="eyebrow">JaundiCare legal information</p><h1>{isPrivacy ? "Privacy Notice" : "Terms of Use"}</h1><p className="legal-updated">Last updated: 17 August 2026</p>{isPrivacy ? <><h2>What this notice covers</h2><p>JaundiCare processes the minimum account, baby-profile, screening and care-support information required to provide its services. It is a newborn-care support tool, not an emergency service or replacement for a clinician.</p><h2>How information is used</h2><p>Phone numbers are used for account verification. Baby profile and screening records are linked to the signed-in account so a caregiver can follow up. Screening images are processed to provide a result. Training-image storage is disabled by default and requires separate, explicit consent.</p><h2>Keeping information safe</h2><p>The browser communicates with the API over HTTPS. The web app keeps session tokens only for the active browser session. Never share verification codes or account access with another person.</p><h2>Your choices</h2><p>You can ask to delete your account and associated records in the app. Do not upload an image unless you are authorised to make that decision for the baby.</p></> : <><h2>Using JaundiCare safely</h2><p>Use JaundiCare only for newborn-care education, screening support and referral guidance. It does not make a medical diagnosis. Seek urgent medical care immediately for a very sleepy or floppy baby, poor feeding, seizures, breathing difficulty, fever, pale stool, or any serious concern.</p><h2>Your responsibility</h2><p>Provide accurate information and protect your phone and verification code. Do not use another person’s account or rely on a result to delay necessary clinical care.</p><h2>Service availability</h2><p>Some functions require internet access, including secure sign-in, live facility information and AI assistants. Service availability cannot be guaranteed during network or provider outages.</p></>}<button className="button" onClick={() => navigate("/")}>Back to JaundiCare</button></main>;
+function LegalPage({ type, navigate, t, language }) {
+  const content = legalContent[language]?.[type] || legalContent.en[type];
+  return <main className="legal-page"><p className="eyebrow">{content.eyebrow}</p><h1>{content.title}</h1><p className="legal-updated">{content.updated}</p>{content.sections.map(([heading, body]) => <section key={heading}><h2>{heading}</h2><p>{body}</p></section>)}<button className="button" onClick={() => navigate("/")}>{t("ui.legal.back", "Back to JaundiCare")}</button></main>;
 }
 
-function SiteFooter({ navigate }) {
+function SiteFooter({ navigate, t }) {
   const contact = import.meta.env.VITE_CONTACT_EMAIL;
-  return <footer className="site-footer"><div><button className="brand footer-brand" onClick={() => navigate("/")}><span className="brand-mark">J</span><span><strong>JaundiCare</strong><small>Newborn care support</small></span></button><p>Clear support for parents. Faster action for newborn care.</p></div><div className="footer-links"><button onClick={() => navigate("/privacy")}>Privacy Notice</button><button onClick={() => navigate("/terms")}>Terms of Use</button>{contact && <a href={`mailto:${contact}`}>Contact</a>}</div><small>© {new Date().getFullYear()} JaundiCare. Screening support, not medical diagnosis.</small></footer>;
+  return <footer className="site-footer"><div><button className="brand footer-brand" onClick={() => navigate("/")}><span className="brand-mark">J</span><span><strong>JaundiCare</strong><small>{t("app.support", "Newborn care support")}</small></span></button><p>{t("trust.body", "Screening support, not medical diagnosis.")}</p></div><div className="footer-links"><button onClick={() => navigate("/privacy")}>{t("ui.legal.privacy", "Privacy Notice")}</button><button onClick={() => navigate("/terms")}>{t("ui.legal.terms", "Terms of Use")}</button>{contact && <a href={`mailto:${contact}`}>Contact</a>}</div><small>© {new Date().getFullYear()} JaundiCare. {t("trust.title", "Screening support, not medical diagnosis.")}</small></footer>;
 }
 
 export default App;
