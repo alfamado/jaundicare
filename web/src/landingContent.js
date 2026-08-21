@@ -2,6 +2,7 @@
 export const landingContent = {
   en: {
     visualTop: "Notice changes early", visualMiddle: "Small steps. Clear next action.", visualBottom: "Get the right next step",
+    howItWorksAction: "See how it works", trustLabel: "What JaundiCare helps with", trustItems: ["Guided questions", "Care in 5 languages", "Nearby care support"],
     madeFor: "Made for busy caregivers", featureTitle: "Support that is clear before fear takes over.",
     features: [["Screen with guidance", "Use a baby photo together with practical questions about feeding, alertness and warning signs."], ["See the next action", "The app presents urgent, same-day or monitoring guidance in plain language."], ["Find appropriate care", "Use location or a manual State/LGA choice to find facilities and their services."], ["Keep learning", "Simple, multilingual newborn-care information is available when a parent needs it."]],
     parentEyebrow: "For parents and caregivers", parentTitle: "One concern. One clear next step.", parentItems: ["Save a baby profile once.", "Use guided screening when worried.", "Keep the screening history for follow-up."], parentAction: "Open parent support",
@@ -11,6 +12,7 @@ export const landingContent = {
   },
   yo: {
     visualTop: "Mọ àwọn ìyípadà ní kutukutu", visualMiddle: "Ìgbésẹ̀ kékeré. Ìtọ́sọ́nà tó yé ẹni.", visualBottom: "Gba ìgbésẹ̀ tó tọ́ tó kàn",
+    howItWorksAction: "Wo bí ó ṣe ń ṣiṣẹ́", trustLabel: "Ohun tí JaundiCare ń ràn lọ́wọ́ pẹ̀lú", trustItems: ["Ìbéèrè ìtọ́sọ́nà", "Ìtọ́jú ní èdè márùn-ún", "Ìrànlọ́wọ́ ibi ìtọ́jú tó wà nítòsí"],
     madeFor: "Fún àwọn olùtọ́jú tó ní iṣẹ́ púpọ̀", featureTitle: "Ìtìlẹ́yìn tó yé ẹni kí ìbẹ̀rù tó gbà ọkàn.",
     features: [["Ṣàyẹ̀wò pẹ̀lú ìtọ́sọ́nà", "Lo àwòrán ọmọ pẹ̀lú ìbéèrè tó wúlò nípa mímu ọmú, jíjí àti àmì ewu."], ["Mọ ìgbésẹ̀ tó kàn", "Ètò náà fi ìtọ́sọ́nà pajawiri, ìṣàyẹ̀wò lónìí, tàbí ìṣọ́ra hàn ní èdè tó rọrùn."], ["Wá ibi ìtọ́jú tó yẹ", "Lo ibi tí o wà tàbí yan ìpínlẹ̀ àti LGA láti rí ilé ìwòsàn àti iṣẹ́ tí wọ́n ní."], ["Máa kọ́ ẹ̀kọ́ sí i", "Ìwífún ìtọ́jú ọmọ tuntun ní ọ̀pọ̀ èdè wà nígbà tí òbí bá nílò rẹ."],],
     parentEyebrow: "Fún òbí àti olùtọ́jú", parentTitle: "Ìbànújẹ kan. Ìgbésẹ̀ kan tó yé ẹni.", parentItems: ["Fi ìwòye ọmọ pamọ́ lẹ́ẹ̀kan.", "Lo ìṣàyẹ̀wò ìtọ́sọ́nà nígbà tí o bá ní ìbànújẹ.", "Pa ìtàn ìṣàyẹ̀wò mọ́ fún àtẹ̀lé."], parentAction: "Ṣí ìtìlẹ́yìn òbí", 
@@ -20,6 +22,7 @@ export const landingContent = {
   },
   ha: {
     visualTop: "Lura da canji da wuri", visualMiddle: "Ƙananan matakai. Bayyanannen mataki na gaba.", visualBottom: "Sami mataki na gaba da ya dace",
+    howItWorksAction: "Duba yadda yake aiki", trustLabel: "Abin da JaundiCare ke taimakawa da shi", trustItems: ["Tambayoyi masu jagora", "Kulawa cikin harsuna biyar", "Taimakon wurin kulawa na kusa"],
     madeFor: "An yi don masu kula masu aiki", featureTitle: "Tallafin da yake a sarari kafin tsoro ya mamaye zuciya.",
     features: [["Yi bincike da jagora", "Yi amfani da hoton jariri tare da tambayoyi masu amfani kan shan nono, farkawa da alamun haɗari."], ["San mataki na gaba", "Manhajar tana nuna gaggawa, dubawa a yau ko sa ido cikin harshe mai sauƙi."], ["Nemo wurin kulawa da ya dace", "Yi amfani da wurinka ko zaɓi Jiha/LGA don ganin cibiyoyi da ayyukansu."], ["Ci gaba da koyo", "Ana samun bayanin kula da jarirai cikin harsuna da yawa lokacin da iyaye suke bukata."],],
     parentEyebrow: "Don iyaye da masu kula", parentTitle: "Damuwa guda. Mataki guda bayyananne.", parentItems: ["Ajiye bayanin jariri sau ɗaya.", "Yi amfani da bincike mai jagora idan kana damuwa.", "Ajiye tarihin bincike don bibiyar kulawa."], parentAction: "Buɗe tallafin iyaye",
@@ -29,6 +32,7 @@ export const landingContent = {
   },
   ig: {
     visualTop: "Rịba mgbanwe n'oge", visualMiddle: "Nzọụkwụ nta. Omume ọzọ doro anya.", visualBottom: "Nweta usoro ọzọ kwesịrị ekwesị",
+    howItWorksAction: "Hụ ka o si arụ ọrụ", trustLabel: "Ihe JaundiCare na-enyere aka na ya", trustItems: ["Ajụjụ a na-eduzi", "Nlekọta n'asụsụ ise", "Enyemaka ebe nlekọta dị nso"],
     madeFor: "E mere maka ndị nlekọta na-arụsi ọrụ ike", featureTitle: "Nkwado doro anya tupu egwu ejide obi.",
     features: [["Nyochaa site na ntụziaka", "Jiri foto nwa na ajụjụ bara uru gbasara iri nri, iteta na ihe ịrịba ama ize ndụ."], ["Hụ omume ọzọ", "Ngwa ahụ na-egosi ihe mberede, nyocha taa, ma ọ bụ nlekọta n'asụsụ dị mfe."], ["Chọta ebe nlekọta kwesịrị ekwesị", "Jiri ebe ị nọ ma ọ bụ họrọ Steeti/LGA ka ịhụ ụlọ ọrụ na ọrụ ha."], ["Na-amụtakwu", "Ozi nlekọta nwa ọhụrụ n'ọtụtụ asụsụ dị mgbe nne na nna chọrọ ya."],],
     parentEyebrow: "Maka nne na nna na ndị nlekọta", parentTitle: "Otu nchegbu. Otu usoro ọzọ doro anya.", parentItems: ["Chekwaa profaịlụ nwa otu ugboro.", "Jiri nyocha a na-eduzi mgbe ị na-echegbu onwe gị.", "Debe akụkọ nyocha maka nlekọta ọzọ."], parentAction: "Mepee nkwado nne na nna",
@@ -38,9 +42,10 @@ export const landingContent = {
   },
   pcm: {
     visualTop: "Notice change early", visualMiddle: "Small step. Clear next action.", visualBottom: "Get the correct next step",
+    howItWorksAction: "See how e dey work", trustLabel: "Wetin JaundiCare dey help with", trustItems: ["Question wey guide you", "Care for 5 language", "Help find care near you"],
     madeFor: "For busy people wey dey care for pikin", featureTitle: "Support wey clear before fear take over.",
     features: [["Check with guide", "Use baby photo with better questions about feeding, alertness and danger sign."], ["See wetin to do next", "The app go show urgent, same-day or monitoring guide with simple words."], ["Find correct care", "Use your location or choose State/LGA to find health centre and the services wey dem get."], ["Keep learning", "Simple newborn-care information dey for different language when parent need am."],],
-    parentEyebrow: "For parents and people wey dey care for pikin", parentTitle: "One concern. One clear next step.", parentItems: ["Save baby profile once.", "Use guided screening when you worry.", "Keep screening history for follow-up."], parentAction: "Open parent support",
+    parentEyebrow: "For parents and people wey dey care for pikin", parentTitle: "One worry. One clear next step.", parentItems: ["Save your baby profile once.", "Use guided screening when you dey worry.", "Keep screening history for follow-up."], parentAction: "Open parent support",
     workerEyebrow: "For community care team", workerTitle: "Support families close to their house.", workerItems: ["Use structured newborn risk questions.", "Write follow-up talk clearly.", "Send danger sign for help sharp sharp."], workerNote: "Care programme dey provide community account.",
     languageEyebrow: "Language no suppose be barrier", languageTitle: "Care guide for words wey families dey use every day.",
     ctaEyebrow: "Start with wetin matter now", ctaTitle: "You dey worry about newborn? Start guided check.", ctaAction: "Open JaundiCare", androidAction: "Get Android app",

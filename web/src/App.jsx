@@ -120,12 +120,29 @@ function App() {
     void playWelcomeAudio(nextLanguage).catch(() => undefined);
   };
 
+  const goToHowItWorks = () => {
+    const scrollToGuide = () => {
+      document.getElementById("how-it-works")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    };
+
+    if (path === "/") {
+      scrollToGuide();
+      return;
+    }
+
+    navigate("/");
+    window.setTimeout(scrollToGuide, 50);
+  };
+
   const page = path === "/privacy" || path === "/terms" || path === "/app" ? path : "/";
 
   return (
     <div className="site-shell">
-      <SiteHeader language={language} onLanguageChange={changeLanguage} navigate={navigate} page={page} t={t} />
-      {page === "/" && <Landing navigate={navigate} t={t} language={language} />}
+      <SiteHeader language={language} onLanguageChange={changeLanguage} navigate={navigate} goToHowItWorks={goToHowItWorks} page={page} t={t} />
+      {page === "/" && <Landing navigate={navigate} goToHowItWorks={goToHowItWorks} onLanguageChange={changeLanguage} t={t} language={language} />}
       {page === "/app" && <WebPortal language={language} t={t} navigate={navigate} />}
       {page === "/privacy" && <LegalPage type="privacy" navigate={navigate} t={t} language={language} />}
       {page === "/terms" && <LegalPage type="terms" navigate={navigate} t={t} language={language} />}
@@ -134,7 +151,7 @@ function App() {
   );
 }
 
-function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
+function SiteHeader({ language, onLanguageChange, navigate, goToHowItWorks, page, t }) {
   return (
     <header className="site-header">
       <button className="brand" onClick={() => navigate("/")} aria-label="JaundiCare home">
@@ -145,7 +162,7 @@ function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
         </span>
       </button>
       <nav className="site-nav" aria-label="Main navigation">
-        <button onClick={() => navigate("/")}>{t("dashboard.learn_jaundice", "How it works")}</button>
+        <button onClick={goToHowItWorks}>{t("dashboard.learn_jaundice", "How it works")}</button>
         <button onClick={() => navigate("/privacy")}>{t("ui.legal.privacy", "Privacy")}</button>
         <button className={page === "/app" ? "nav-active" : ""} onClick={() => navigate("/app")}>{t("dashboard.start_check", "Open web app")}</button>
       </nav>
@@ -162,7 +179,7 @@ function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
   );
 }
 
-function Landing({ navigate, t, language }) {
+function Landing({ navigate, goToHowItWorks, onLanguageChange, t, language }) {
   const downloadUrl = import.meta.env.VITE_ANDROID_DOWNLOAD_URL;
   const copy = landingContent[language] || landingContent.en;
   return (
@@ -177,11 +194,16 @@ function Landing({ navigate, t, language }) {
             {downloadUrl ? (
               <a className="button button-secondary" href={downloadUrl}>{copy.androidAction}</a>
             ) : (
-              <button className="button button-secondary" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Start a baby check")}</button>
+              <button className="button button-secondary" onClick={goToHowItWorks}>{copy.howItWorksAction}</button>
             )}
           </div>
           <p className="hero-note">{t("ui.onboarding.choose_language", "Choose your language")}: English, Yorùbá, Hausa, Igbo, Pidgin.</p>
           <WelcomeAudioButton language={language} t={t} />
+          <div className="hero-trust" aria-label={copy.trustLabel}>
+            {copy.trustItems.map((item, index) => (
+              <span key={item}><b>{index + 1}</b>{item}</span>
+            ))}
+          </div>
         </div>
         <div className="hero-visual" aria-label="Simple illustration of parent support">
           <div className="signal-card signal-top"><span>1</span> {copy.visualTop}</div>
@@ -200,7 +222,7 @@ function Landing({ navigate, t, language }) {
         <p><strong>{t("trust.title", "Important")}</strong> {t("ui.onboarding.safety", "JaundiCare is a screening and care-support tool. It does not diagnose jaundice or replace a clinician, bilirubin test, or urgent medical care.")}</p>
       </section>
 
-      <section className="section-wrap">
+      <section className="section-wrap" id="how-it-works">
         <p className="eyebrow">{copy.madeFor}</p>
         <h2>{copy.featureTitle}</h2>
         <div className="feature-grid">
@@ -233,7 +255,17 @@ function Landing({ navigate, t, language }) {
           <h2>{copy.languageTitle}</h2>
         </div>
         <div className="language-pills">
-          {languages.map(([, label]) => <span key={label}>{label}</span>)}
+          {languages.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={language === value ? "language-pill-active" : ""}
+              aria-pressed={language === value}
+              onClick={() => onLanguageChange(value)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </section>
 
