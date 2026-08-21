@@ -57,7 +57,7 @@ async def test_source_backed_fallback_answers_feeding_question(monkeypatch):
 @pytest.mark.asyncio
 async def test_common_questions_use_compact_reviewed_answers_without_model(monkeypatch):
     async def model_must_not_run(_messages):
-        raise AssertionError("Reviewed quick answers must not call the model")
+        raise AssertionError("Curated quick answers must not call the model")
 
     monkeypatch.setattr(service, "generate", model_must_not_run)
 
@@ -70,6 +70,22 @@ async def test_common_questions_use_compact_reviewed_answers_without_model(monke
     assert "BCG" in answer.response
     assert "OPV0" in answer.response
     assert len(answer.response) < 240
+
+
+@pytest.mark.asyncio
+async def test_water_question_uses_short_source_backed_answer_without_model(monkeypatch):
+    async def model_must_not_run(_messages):
+        raise AssertionError("Curated quick answers must not call the model")
+
+    monkeypatch.setattr(service, "generate", model_must_not_run)
+    answer = await service.answer_question(
+        domain=NEWBORN_CARE,
+        question="Should I give my baby water?",
+    )
+
+    assert answer.provider == "retrieval"
+    assert answer.response.startswith("No.")
+    assert "under 6 months" in answer.response
 
 
 @pytest.mark.asyncio

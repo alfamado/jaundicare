@@ -49,12 +49,27 @@ KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
             "how many times breastfeed", "feed day and night",
         ),
         answer=(
-            "Breastfeed whenever your baby shows hunger cues, day and night—there is "
-            "no fixed hourly schedule. For the first 6 months, give only breast milk "
-            "unless a qualified health worker advises otherwise."
+            "Breastfeed on demand—usually 8–12 times in 24 hours, including overnight. "
+            "Feed whenever your baby roots, sucks their hands, or seems hungry."
         ),
         source_title="WHO: Infant and young child feeding",
         source_url="https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding",
+        direct_response=True,
+    ),
+    KnowledgeCard(
+        id="newborn-water-under-six-months-001",
+        domain=NEWBORN_CARE,
+        title="Water for a baby under six months",
+        keywords=(
+            "give baby water", "give my baby water", "should baby drink water",
+            "baby water", "water under six months", "water hot days",
+        ),
+        answer=(
+            "No. Babies under 6 months do not need water; breast milk provides the "
+            "water they need. If your baby seems thirsty, offer an extra breastfeed."
+        ),
+        source_title="WHO: Breastfeeding questions and answers",
+        source_url="https://www.who.int/news-room/questions-and-answers/item/breastfeeding",
         direct_response=True,
     ),
     KnowledgeCard(
@@ -66,10 +81,9 @@ KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
             "drowsy during feeds", "baby sleepy feed",
         ),
         answer=(
-            "Try offering the breast again when your baby is more alert and keep "
-            "offering feeds often. If your baby is difficult to wake, repeatedly "
-            "feeds poorly, refuses feeds, or looks yellow, take them for urgent "
-            "assessment today."
+            "Offer the breast again when your baby is more alert and keep offering "
+            "feeds often. If your baby is hard to wake, refuses feeds, or looks "
+            "yellow, take them for urgent assessment today."
         ),
         source_title="WHO: Early Essential Newborn Care",
         source_url="https://www.who.int/news-room/questions-and-answers/item/early-essential-newborn-care",
@@ -142,9 +156,8 @@ KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
             "vaccine at birth", "birth vaccines", "birth vaccine",
         ),
         answer=(
-            "At birth in Nigeria, the routine visit includes BCG, OPV0 (oral polio "
-            "birth dose) and hepatitis B birth dose. Take your child health card to "
-            "the clinic so every dose is recorded."
+            "At birth: BCG, OPV0 (oral polio) and hepatitis B. Take your child's "
+            "health card so every dose is recorded."
         ),
         source_title="UNICEF Nigeria: Immunization Schedule",
         source_url="https://www.unicef.org/nigeria/media/9911/file/Nigeria%20Immunization%20Schedule.pdf.pdf",
@@ -159,10 +172,8 @@ KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
             "when next vaccine", "when should next", "next routine visit",
         ),
         answer=(
-            "After the birth visit, the next routine immunisation visit is at 6 weeks. "
-            "The following routine visits are generally at 10 and 14 weeks. Take the "
-            "child health card so the clinic can confirm the current schedule and any "
-            "missed doses."
+            "Next clinic visit: 6 weeks after birth. Take the child health card so "
+            "the clinic can record the dose and confirm any missed vaccines."
         ),
         source_title="UNICEF Nigeria: Immunization Schedule",
         source_url="https://www.unicef.org/nigeria/media/9911/file/Nigeria%20Immunization%20Schedule.pdf.pdf",
@@ -224,6 +235,14 @@ _DIRECT_QUESTION_PATTERNS = (
     (
         "newborn-sleepy-feeds-001",
         re.compile(r"\\b(?:sleepy|drowsy|sleep)\\b.{0,60}\\b(?:feed|feeds|breastfeed|suck)\\b", re.IGNORECASE),
+    ),
+    (
+        "newborn-water-under-six-months-001",
+        re.compile(
+            r"\\b(?:give|drink|need|should)\\b.{0,60}\\bwater\\b"
+            r"|\\bwater\\b.{0,60}\\b(?:baby|newborn|month|breastfeed)\\b",
+            re.IGNORECASE,
+        ),
     ),
     (
         "immunisation-ng-birth-direct-001",
