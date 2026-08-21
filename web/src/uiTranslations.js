@@ -16,7 +16,6 @@ export const uiTranslations = {
         phone_privacy: "Your phone number is used only for verification. We never share it with third parties.",
         enter_code: "Enter verification code",
         sent_code: "We sent a 6-digit code to",
-        demo_code: "Enter the 6-digit code assigned to this demo account",
         verifying: "Verifying…",
         resend: "Use a different number",
         network_error: "Network error. Please check your connection.",
@@ -34,6 +33,10 @@ export const uiTranslations = {
         terms: "Terms of Use",
         back: "Back to JaundiCare",
       },
+      company: {
+        address: "Business address",
+        product_of: "A product of",
+      },
     },
   },
   yo: {
@@ -48,7 +51,6 @@ export const uiTranslations = {
         phone_privacy: "A ń lo nọ́mbà fóònù rẹ fún ìmúdájú nìkan. A kì í pín in fún ẹlòmíràn.",
         enter_code: "Tẹ kóòdù ìmúdájú sílẹ̀",
         sent_code: "A ti fi kóòdù oní-nọ́mbà 6 ránṣẹ́ sí",
-        demo_code: "Tẹ kóòdù oní-nọ́mbà 6 tí a fún àkọọ́lẹ̀ àfihàn yìí sílẹ̀",
         verifying: "Ń jẹ́rìísí…",
         resend: "Lo nọ́mbà mìíràn",
         network_error: "Ìsopọ̀ ayélujára kò ṣiṣẹ́. Jọ̀wọ́ ṣàyẹ̀wò ìsopọ̀ rẹ.",
@@ -66,6 +68,10 @@ export const uiTranslations = {
         terms: "Àwọn òfin ìlò",
         back: "Padà sí JaundiCare",
       },
+      company: {
+        address: "Àdírẹ́sì ilé iṣẹ́",
+        product_of: "Ọjà tí",
+      },
     },
   },
   ha: {
@@ -80,7 +86,6 @@ export const uiTranslations = {
         phone_privacy: "Ana amfani da lambar wayarka ne kawai don tabbatarwa. Ba ma raba ta da wasu.",
         enter_code: "Shigar da lambar tabbatarwa",
         sent_code: "Mun tura lambar lambobi 6 zuwa",
-        demo_code: "Shigar da lambar lambobi 6 da aka ba wannan asusun gwaji",
         verifying: "Ana tabbatarwa…",
         resend: "Yi amfani da wata lamba",
         network_error: "Matsalar hanyar sadarwa. Da fatan a duba haɗinka.",
@@ -98,6 +103,10 @@ export const uiTranslations = {
         terms: "Sharuɗɗan amfani",
         back: "Koma JaundiCare",
       },
+      company: {
+        address: "Adireshin kasuwanci",
+        product_of: "Samfuri ne na",
+      },
     },
   },
   ig: {
@@ -112,7 +121,6 @@ export const uiTranslations = {
         phone_privacy: "A na-eji nọmba ekwentị gị naanị maka nkwado. Anyị anaghị ekekọrịta ya na ndị ọzọ.",
         enter_code: "Tinye koodu nkwado",
         sent_code: "Anyị zigara koodu mkpụrụ ọnụọgụ 6 na",
-        demo_code: "Tinye koodu mkpụrụ ọnụọgụ 6 e nyere akaụntụ ngosi a",
         verifying: "Na-akwado…",
         resend: "Jiri nọmba ọzọ",
         network_error: "Nsogbu netwọkụ. Biko lelee njikọ gị.",
@@ -130,6 +138,10 @@ export const uiTranslations = {
         terms: "Usoro ojiji",
         back: "Laghachi na JaundiCare",
       },
+      company: {
+        address: "Adreesị azụmahịa",
+        product_of: "Ngwaahịa nke",
+      },
     },
   },
   pcm: {
@@ -144,7 +156,6 @@ export const uiTranslations = {
         phone_privacy: "Na only to verify you we dey use your phone number. We no dey share am with anybody.",
         enter_code: "Put verification code",
         sent_code: "We don send 6-digit code go",
-        demo_code: "Put the 6-digit code wey dem give this demo account",
         verifying: "We dey verify am…",
         resend: "Use another number",
         network_error: "Network no connect. Abeg check your connection.",
@@ -161,6 +172,10 @@ export const uiTranslations = {
         privacy: "Privacy notice",
         terms: "Terms of use",
         back: "Go back to JaundiCare",
+      },
+      company: {
+        address: "Business address",
+        product_of: "Na product of",
       },
     },
   },

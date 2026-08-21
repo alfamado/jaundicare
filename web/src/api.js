@@ -76,11 +76,11 @@ export async function request(path, options = {}, retry = true) {
   return responseData(response);
 }
 
-export async function requestOtp({ phoneNumber, language, role = "parent" }) {
+export async function requestOtp({ phoneNumber, language }) {
   return request("/auth/request-otp", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone_number: phoneNumber, language, role }),
+    body: JSON.stringify({ phone_number: phoneNumber, language }),
   });
 }
 

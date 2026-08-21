@@ -1341,8 +1341,6 @@ import { useWelcomeAudio } from "../hooks/useAudio";
 import { useTranslations } from "../hooks/useTranslations";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
 
-type Role = "parent" | "health_worker";
-
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48 - 10) / 2; // Perfect pixel-accurate split math accounting for gaps
 
@@ -1357,7 +1355,6 @@ const LANGUAGES = [
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const [step, setStep]     = useState(0);
-  const [role, setRole]     = useState<Role | null>(null);
   const [lang, setLang]     = useState("en");
 
   const finishOnboarding = useAppStore((s) => s.finishOnboarding);
@@ -1391,9 +1388,10 @@ export default function OnboardingScreen() {
   };
 
   const finish = () => {
-    if (!role) return;
     stopAudio();
-    finishOnboarding(role);
+    // The verified server account decides the role. This initial local state
+    // is replaced after OTP verification for an authorised health worker.
+    finishOnboarding("parent");
     // Language and introductory audio are chosen before authentication, but
     // personal data and all app tabs remain unavailable until OTP verification.
     router.replace("/auth/phone");
@@ -1457,61 +1455,8 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        {/* ── Step 1: Role selection ────────────────────────────────── */}
+        {/* ── Step 1: account setup ─────────────────────────────────── */}
         {step === 1 && (
-          <View style={s.container}>
-            <View style={[s.iconWrap, { borderColor: Colors.amber }]}>
-              <Ionicons name="people" size={34} color={Colors.amber} />
-            </View>
-
-            <Text style={s.title}>{t("ui.onboarding.who_are_you")}</Text>
-            <Text style={s.sub}>{t("ui.onboarding.role_help")}</Text>
-
-            <View style={s.roleGrid}>
-              {([
-                {
-                  key:      "parent" as Role,
-                  icon:     "person-outline" as const,
-                  title:    t("ui.onboarding.parent"),
-                  subtitle: t("ui.onboarding.parent_subtitle"),
-                },
-                {
-                  key:      "health_worker" as Role,
-                  icon:     "medkit-outline" as const,
-                  title:    t("ui.onboarding.health_worker"),
-                  subtitle: t("ui.onboarding.health_worker_subtitle"),
-                },
-              ]).map((option) => (
-                <TouchableOpacity
-                  key={option.key}
-                  style={[s.roleCard, role === option.key && s.roleCardSelected]}
-                  onPress={() => { setRole(option.key); setStep(2); }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name={option.icon}
-                    size={30}
-                    color={role === option.key ? Colors.coral : Colors.brownLight}
-                  />
-                  <Text style={[s.roleTitle, role === option.key && { color: Colors.coral }]}>
-                    {option.title}
-                  </Text>
-                  <Text style={s.roleSub}>{option.subtitle}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={s.disclaimer}>
-              <Ionicons name="shield-checkmark-outline" size={14} color={Colors.brownLight} style={{ marginTop: 2 }} />
-              <Text style={s.disclaimerText}>
-                {t("ui.onboarding.safety")}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── Step 2: All set ───────────────────────────────────────── */}
-        {step === 2 && (
           <View style={s.container}>
             <View style={[s.iconWrap, { borderColor: Colors.sage }]}>
               <Ionicons name="checkmark-circle" size={34} color={Colors.sage} />
@@ -1523,10 +1468,7 @@ export default function OnboardingScreen() {
             </Text>
 
             <View style={s.stepsList}>
-              {(role === "health_worker"
-                ? [t("chw.title"), t("chw.actions.screening"), t("reminder.title")]
-                : [t("profile.title"), t("screening.title"), t("result.what_next")]
-              ).map((item, i) => (
+              {[t("profile.title"), t("screening.title"), t("result.what_next")].map((item, i) => (
                 <View key={i} style={s.stepRow}>
                   <View style={s.stepNum}>
                     <Text style={s.stepNumText}>{i + 1}</Text>
@@ -1534,6 +1476,11 @@ export default function OnboardingScreen() {
                   <Text style={s.stepText}>{item}</Text>
                 </View>
               ))}
+            </View>
+
+            <View style={s.disclaimer}>
+              <Ionicons name="shield-checkmark-outline" size={14} color={Colors.brownLight} style={{ marginTop: 2 }} />
+              <Text style={s.disclaimerText}>{t("ui.onboarding.health_worker_note")}</Text>
             </View>
 
             <TouchableOpacity style={s.primaryBtn} onPress={finish} activeOpacity={0.8}>

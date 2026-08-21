@@ -11207,6 +11207,15 @@ export default function ScreeningScreen() {
     requestLocation();      
   }, []);
 
+  // Keep the administrative area discovered on-device, while preserving a
+  // State/LGA the parent deliberately selects in the picker.
+  useEffect(() => {
+    if (!state && location.state) {
+      setState(location.state);
+      setLga(location.lga ?? "");
+    }
+  }, [location.state, location.lga, state]);
+
   const toggleSymptom = (key: string) =>      
     setSymptoms(p => ({ ...p, [key]: !p[key] }));
 
@@ -11308,7 +11317,6 @@ export default function ScreeningScreen() {
     const ageHours = ageOverrideHours === undefined
       ? (profile?.age_hours ?? undefined)
       : (ageOverrideHours ?? undefined);
-    const hasGPS    = location.latitude != null && location.longitude != null;      
     const expanded  = expandSymptoms();      
     const apiPayload = {      
       imageUri,      
@@ -11327,8 +11335,8 @@ export default function ScreeningScreen() {
       skin_tone_category:          skinTone ?? undefined,      
       user_latitude:               location.latitude  ?? undefined,      
       user_longitude:              location.longitude ?? undefined,      
-      user_state:                  hasGPS ? undefined : (state || undefined),      
-      user_lga:                    hasGPS ? undefined : (lga || undefined),      
+      user_state:                  state || location.state || undefined,
+      user_lga:                    lga || location.lga || undefined,
       facility_preference:         preference,      
       ui_language:                 language,      
       allow_training_use:          shareForTraining,
@@ -11749,34 +11757,34 @@ export default function ScreeningScreen() {
                 </Text>      
               </View>  
 
-              {location.status !== "granted" && (      
-                <>      
-                  <TouchableOpacity      
-                    style={s.pickerBtn}      
-                    onPress={() => setShowStatePicker(true)}      
-                  >      
-                    <Ionicons name="map-outline" size={16} color={Colors.coral} />      
-                    <Text style={s.pickerBtnText}>      
-                      {state || (t("location.select_state") === "location.select_state" ? "Select your state" : t("location.select_state"))}      
-                    </Text>      
-                    <Ionicons name="chevron-down" size={16} color={Colors.brownLight} />      
-                  </TouchableOpacity>  
+              <Text style={s.cardSub}>
+                Precise GPS is used only to find facilities. Your saved screening keeps State/LGA and an approximate location.
+              </Text>
 
-                  {state !== "" && (      
-                    <TouchableOpacity      
-                      style={[s.pickerBtn, { marginTop: 8 }]}      
-                      onPress={() => setShowLgaPicker(true)}      
-                    >      
-                      <Ionicons name="location-outline" size={16} color={Colors.coral} />      
-                      <Text style={s.pickerBtnText}>      
-                        {lga || (t("location.select_lga") === "location.select_lga" ? "Select your LGA (optional)" : t("location.select_lga"))}      
-                      </Text>      
-                      <Ionicons name="chevron-down" size={16} color={Colors.brownLight} />      
-                    </TouchableOpacity>      
-                  )}      
-                </>      
-              )}      
-            </View>  
+              <TouchableOpacity
+                style={s.pickerBtn}
+                onPress={() => setShowStatePicker(true)}
+              >
+                <Ionicons name="map-outline" size={16} color={Colors.coral} />
+                <Text style={s.pickerBtnText}>
+                  {state || (t("location.select_state") === "location.select_state" ? "Select your state" : t("location.select_state"))}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color={Colors.brownLight} />
+              </TouchableOpacity>
+
+              {state !== "" && (
+                <TouchableOpacity
+                  style={[s.pickerBtn, { marginTop: 8 }]}
+                  onPress={() => setShowLgaPicker(true)}
+                >
+                  <Ionicons name="location-outline" size={16} color={Colors.coral} />
+                  <Text style={s.pickerBtnText}>
+                    {lga || (t("location.select_lga") === "location.select_lga" ? "Select your LGA (optional)" : t("location.select_lga"))}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={Colors.brownLight} />
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* ── STEP 6: Facility Preference ── */}      
             <View style={s.card}>      

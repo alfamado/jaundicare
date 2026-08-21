@@ -189,12 +189,9 @@ export default function PhoneScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Safely inherit local user configuration options from the Zustand state layer
+  // The selected language is attached to the OTP record. Account role is
+  // determined only by the server after verification.
   const currentLanguage = useAppStore((s) => s.language) || "en";
-  // The API accepts this selection only in its restricted presentation OTP
-  // mode. In ordinary delivery mode the server rejects self-assigned
-  // health-worker access and keeps public accounts as parents.
-  const onboardingRole = useAppStore((s) => s.role) ?? "parent";
 
   const formatDisplay = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -226,7 +223,6 @@ export default function PhoneScreen() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ 
           phone_number: phone,
-          role: onboardingRole,
           language: currentLanguage
         }),
       });
@@ -238,13 +234,7 @@ export default function PhoneScreen() {
         return;
       }
 
-      router.push({
-        pathname: "/auth/otp",
-        params: {
-          phone,
-          demo: data.delivery_mode === "demo" ? "1" : "0",
-        },
-      });
+      router.push({ pathname: "/auth/otp", params: { phone } });
     } catch {
       setError(t("ui.auth.network_error"));
     } finally {

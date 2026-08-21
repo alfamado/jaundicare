@@ -75,9 +75,7 @@ Termii-compatible number normalization, and standard production logging.
 """
 
 import logging
-import hmac
 import os
-import re
 import httpx
 from dotenv import load_dotenv
 
@@ -91,22 +89,8 @@ TERMII_API_KEY = os.getenv("TERMII_API_KEY", "")
 # versioned hostname. Both forms are accepted: https://host and https://host/api.
 TERMII_BASE_URL = os.getenv("TERMII_BASE_URL", "").strip().rstrip("/")
 
-SENDER_ID = os.getenv("TERMII_SENDER_ID", "JaundiCare")
+SENDER_ID = os.getenv("TERMII_SENDER_ID", "OE Alert")
 TIMEOUT = 15.0
-OTP_DELIVERY_MODE = os.getenv("OTP_DELIVERY_MODE", "termii").strip().lower()
-
-
-class DemoOtpConfigurationError(RuntimeError):
-    """Raised when presentation-only authentication has not been safely configured."""
-
-
-def _is_truthy(value: str | None) -> bool:
-    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
-
-
-def is_demo_mode() -> bool:
-    """Return true only when the explicit OTP delivery-mode switch selects demo."""
-    return OTP_DELIVERY_MODE == "demo"
 
 # ── PERSISTENT CONNECTION POOLING ────────────────────────────
 async_client = httpx.AsyncClient(
@@ -138,68 +122,6 @@ def format_phone_ng(phone: str) -> str:
     return phone
 
 
-def get_demo_otp_for_phone(phone_number: str) -> str | None:
-    """Return the configured demonstration code for one of exactly three team accounts.
-
-    This is deliberately unavailable unless the service is explicitly marked as a
-    demo environment. The codes and phone numbers live only in Render environment
-    variables; they are never returned by the API or written to logs.
-    """
-    if not is_demo_mode():
-        return None
-
-    if os.getenv("ENVIRONMENT", "").strip().lower() != "demo":
-        raise DemoOtpConfigurationError(
-            "Demo OTP mode requires ENVIRONMENT=demo."
-        )
-    if not _is_truthy(os.getenv("DEMO_AUTH_ENABLED")):
-        raise DemoOtpConfigurationError(
-            "Demo OTP mode requires DEMO_AUTH_ENABLED=true."
-        )
-
-    credentials: dict[str, str] = {}
-    for index in range(1, 4):
-        raw_phone = os.getenv(f"DEMO_ALLOWED_PHONE_{index}", "")
-        code = os.getenv(f"DEMO_OTP_CODE_{index}", "").strip()
-        phone = format_phone_ng(raw_phone)
-        if not re.fullmatch(r"234\d{10}", phone) or not re.fullmatch(r"\d{6}", code):
-            raise DemoOtpConfigurationError(
-                "Demo OTP mode needs three valid Nigerian phone numbers and six-digit codes."
-            )
-        if phone in credentials or code in credentials.values():
-            raise DemoOtpConfigurationError(
-                "Demo phone numbers and codes must each be unique."
-            )
-        credentials[phone] = code
-
-    return credentials.get(format_phone_ng(phone_number))
-
-
-def get_demo_account_role(phone_number: str) -> str:
-    """Return the role for the one explicitly configured presentation account.
-
-    This is only used when demo OTP mode is enabled. It is deliberately based
-    on a server environment variable rather than the role sent by the mobile
-    app, so a public caller cannot promote their own account.
-    """
-    if not is_demo_mode():
-        return "parent"
-
-    raw_phone = os.getenv("DEMO_HEALTH_WORKER_PHONE", "").strip()
-    if not raw_phone:
-        return "parent"
-
-    approved_phone = format_phone_ng(raw_phone)
-    if not re.fullmatch(r"234\d{10}", approved_phone):
-        raise DemoOtpConfigurationError(
-            "DEMO_HEALTH_WORKER_PHONE must be a valid Nigerian phone number."
-        )
-
-    return "health_worker" if hmac.compare_digest(approved_phone, format_phone_ng(phone_number)) else "parent"
-
-
-# The production Termii implementation is retained below. It is bypassed only
-# when OTP_DELIVERY_MODE=demo; restoring real SMS does not require a code edit.
 async def _send_otp_via_termii(phone_number: str, otp_code: str) -> bool:
     """
     Dispatches a 6-digit verification code over Termii's direct DND bypass route.
@@ -260,27 +182,6 @@ async def _send_otp_via_termii(phone_number: str, otp_code: str) -> bool:
 
 
 async def send_otp_sms(phone_number: str, otp_code: str) -> bool:
-    """Deliver a normal Termii OTP or stage a tightly allow-listed demo OTP."""
-    if is_demo_mode():
-        try:
-            expected_otp = get_demo_otp_for_phone(phone_number)
-        except DemoOtpConfigurationError:
-            logger.exception("Demo OTP mode is misconfigured.")
-            return False
-
-        if expected_otp is None:
-            logger.warning("Demo OTP was requested for a phone number outside the allow-list.")
-            return False
-        if not hmac.compare_digest(expected_otp, otp_code):
-            logger.error("Demo OTP did not match its configured presentation account.")
-            return False
-
-        logger.info("A presentation-only OTP was staged for an approved demo account.")
-        return True
-
-    if OTP_DELIVERY_MODE != "termii":
-        logger.error("Unsupported OTP_DELIVERY_MODE configured.")
-        return False
-
+    """Deliver a verification code through the configured Termii account."""
     return await _send_otp_via_termii(phone_number, otp_code)
     

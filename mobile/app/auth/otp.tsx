@@ -262,7 +262,7 @@ const OTP_LENGTH   = 6;
 const RESEND_SECS  = 60;
 
 export default function OTPScreen() {
-  const { phone, demo } = useLocalSearchParams<{ phone: string; demo?: string }>();
+  const { phone } = useLocalSearchParams<{ phone: string }>();
   const { login }    = useAuth();
   const { t } = useTranslations();
 
@@ -277,8 +277,6 @@ export default function OTPScreen() {
 
   // Extract ongoing app states cleanly
   const currentLanguage = useAppStore((s) => s.language) || "en";
-  const onboardingComplete = useAppStore((s) => s.onboarded);
-  const isDemo = demo === "1";
 
   useEffect(() => {
     startCountdown();
@@ -362,7 +360,6 @@ export default function OTPScreen() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ 
           phone_number: phone,
-          role: "parent",
           language: currentLanguage
         }),
       });
@@ -397,7 +394,7 @@ export default function OTPScreen() {
 
         <Text style={s.title}>{t("ui.auth.enter_code")}</Text>
         <Text style={s.sub}>
-          {isDemo ? t("ui.auth.demo_code") : t("ui.auth.sent_code")}{"\n"}
+          {t("ui.auth.sent_code")}{"\n"}
           <Text style={s.phone}>{maskedPhone}</Text>
         </Text>
 
@@ -461,9 +458,7 @@ export default function OTPScreen() {
         </View>
 
         <Text style={s.disclaimer}>
-          {isDemo
-            ? t("ui.auth.demo_hint")
-            : t("ui.auth.sms_hint")}
+          {t("ui.auth.sms_hint")}
         </Text>
       </View>
     </SafeAreaView>

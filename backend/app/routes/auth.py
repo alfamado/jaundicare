@@ -448,14 +448,10 @@ from app.db.models import (
     RefreshToken,
     Screening,
     User,
-    UserRole,
 )
 from app.services.cloudinary_service import delete_image
 from app.services.termii_service import (
-    DemoOtpConfigurationError,
     format_phone_ng,
-    get_demo_otp_for_phone,
-    is_demo_mode,
     send_otp_sms,
 )
 from app.services.auth_utils import (
@@ -532,7 +528,6 @@ def _lock_otp_rate_limit_keys(
 # ── VALIDATION SCHEMAS ────────────────────────────────────────
 class RequestOTPSchema(BaseModel):
     phone_number: str = Field(..., min_length=10, max_length=20, examples=["08012345678"])
-    role: Literal["parent", "health_worker"] = "parent"
     language: Literal["en", "yo", "ha", "ig", "pcm"] = "en"
 
 
@@ -563,36 +558,11 @@ async def request_otp(
     payload: RequestOTPSchema,
     db: Session = Depends(get_db),
 ):
-    demo_mode = is_demo_mode()
-
-    # A public caller can never grant themselves a clinical role. The only
-    # exception is the restricted, allow-listed presentation OTP mode, which
-    # lets one team phone rehearse both interfaces.
-    if not demo_mode and payload.role != UserRole.parent.value:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Health-worker accounts must be provisioned by an administrator.",
-        )
-
     phone = format_phone_ng(payload.phone_number)
 
     # Validates against the stripped E.164 numeric string produced by our Termii helper
     if not phone.startswith("234") or len(phone) != 13:
         raise HTTPException(status_code=400, detail="Invalid Nigerian phone number format.")
-
-    try:
-        demo_otp = get_demo_otp_for_phone(phone) if demo_mode else None
-    except DemoOtpConfigurationError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Presentation authentication is not configured correctly.",
-        )
-
-    if demo_mode and demo_otp is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This phone number is not enabled for the presentation demo.",
-        )
 
     client_fingerprint = _client_fingerprint(request)
     _lock_otp_rate_limit_keys(db, phone, client_fingerprint)
@@ -654,13 +624,12 @@ async def request_otp(
         OtpCode.is_used == False,
     ).delete()
 
-    otp = demo_otp or generate_otp()
+    otp = generate_otp()
     otp_hash = hash_otp(otp)
 
     otp_record = OtpCode(
         phone_number=phone,
         language=payload.language,
-        requested_role=payload.role,
         code_hash=otp_hash,
         expires_at=otp_expiry(),
     )
@@ -673,7 +642,6 @@ async def request_otp(
     )
     db.commit()
 
-    # Dispatch via Termii or stage the configured presentation-only OTP.
     sent = await send_otp_sms(phone, otp)
     if not sent:
         otp_record.is_used = True
@@ -684,9 +652,9 @@ async def request_otp(
         )
 
     return {
-        "message": "Demo verification is ready." if demo_mode else "OTP sent successfully.",
+        "message": "OTP sent successfully.",
         "phone_number": phone,
-        "delivery_mode": "demo" if demo_mode else "sms",
+        "delivery_mode": "sms",
     }
 
 
@@ -732,23 +700,12 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
     user = db.query(User).filter(User.phone_number == phone).first()
     is_new_user = False
 
-    account_role = UserRole.parent.value
-    if is_demo_mode():
-        # The requested role is stored with the OTP, not trusted from the
-        # verification request. This is intentionally limited to allow-listed
-        # presentation phones; production accounts cannot self-assign roles.
-        account_role = (
-            otp_record.requested_role
-            if otp_record.requested_role in {UserRole.parent.value, UserRole.health_worker.value}
-            else UserRole.parent.value
-        )
-
     if not user:
         is_new_user = True
         user = User(
             phone_number=phone,
             is_verified=True,
-            role=account_role,
+            role="parent",
             language=otp_record.language or "en",
             created_at=now,
             last_login=now
@@ -757,10 +714,6 @@ async def verify_otp_endpoint(payload: VerifyOTPSchema, db: Session = Depends(ge
     else:
         user.is_verified = True
         user.last_login = now
-        # A presentation account can switch interfaces between rehearsal runs.
-        # This branch is unreachable in normal SMS delivery mode.
-        if is_demo_mode():
-            user.role = account_role
 
     db.commit()
     db.refresh(user)

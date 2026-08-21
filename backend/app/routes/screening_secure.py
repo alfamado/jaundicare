@@ -31,6 +31,12 @@ TRAINING_IMAGE_STORAGE_ENABLED = os.getenv(
     "false",
 ).strip().lower() in {"1", "true", "yes", "on"}
 TRAINING_CONSENT_VERSION = "2026-07-13-v1"
+LOCATION_DECIMAL_PLACES = 2
+
+
+def _rounded_coordinate(value: float | None) -> float | None:
+    """Retain only approximate coordinates (~1.1 km), never a precise GPS point."""
+    return round(value, LOCATION_DECIMAL_PLACES) if value is not None else None
 
 
 @router.post("/analyze", response_model=ScreeningResponse)
@@ -119,6 +125,8 @@ async def analyze_screening(
         )
 
         screening_id = uuid4()
+        stored_latitude = _rounded_coordinate(user_latitude)
+        stored_longitude = _rounded_coordinate(user_longitude)
         cloudinary_url: str | None = None
         consented_at: datetime | None = None
         if allow_training_use and TRAINING_IMAGE_STORAGE_ENABLED:
@@ -155,8 +163,10 @@ async def analyze_screening(
             parent_message=final_result["parent_message"],
             notes=final_result["notes"],
             symptoms=triage_input,
-            user_latitude=user_latitude,
-            user_longitude=user_longitude,
+            # Exact coordinates were used above only for this request's
+            # facility ranking. Persist planning-level approximate location.
+            user_latitude=stored_latitude,
+            user_longitude=stored_longitude,
             user_state=user_state,
             user_lga=user_lga,
             skin_tone_category=skin_tone_category,

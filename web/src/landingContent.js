@@ -1,0 +1,48 @@
+/** Visible public-homepage copy for the five supported languages. */
+export const landingContent = {
+  en: {
+    visualTop: "Notice changes early", visualMiddle: "Small steps. Clear next action.", visualBottom: "Get the right next step",
+    madeFor: "Made for busy caregivers", featureTitle: "Support that is clear before fear takes over.",
+    features: [["Screen with guidance", "Use a baby photo together with practical questions about feeding, alertness and warning signs."], ["See the next action", "The app presents urgent, same-day or monitoring guidance in plain language."], ["Find appropriate care", "Use location or a manual State/LGA choice to find facilities and their services."], ["Keep learning", "Simple, multilingual newborn-care information is available when a parent needs it."]],
+    parentEyebrow: "For parents and caregivers", parentTitle: "One concern. One clear next step.", parentItems: ["Save a baby profile once.", "Use guided screening when worried.", "Keep the screening history for follow-up."], parentAction: "Open parent support",
+    workerEyebrow: "For community care teams", workerTitle: "Support families closer to home.", workerItems: ["Use structured newborn risk questions.", "Document follow-up conversations clearly.", "Escalate urgent signs without delay."], workerNote: "Community accounts are provisioned by the care programme.",
+    languageEyebrow: "Language should not be a barrier", languageTitle: "Care guidance in words families use every day.",
+    ctaEyebrow: "Start with what matters now", ctaTitle: "Worried about a newborn? Begin a guided check.", ctaAction: "Open JaundiCare", androidAction: "Get Android app",
+  },
+  yo: {
+    visualTop: "Mọ àwọn ìyípadà ní kutukutu", visualMiddle: "Ìgbésẹ̀ kékeré. Ìtọ́sọ́nà tó yé ẹni.", visualBottom: "Gba ìgbésẹ̀ tó tọ́ tó kàn",
+    madeFor: "Fún àwọn olùtọ́jú tó ní iṣẹ́ púpọ̀", featureTitle: "Ìtìlẹ́yìn tó yé ẹni kí ìbẹ̀rù tó gbà ọkàn.",
+    features: [["Ṣàyẹ̀wò pẹ̀lú ìtọ́sọ́nà", "Lo àwòrán ọmọ pẹ̀lú ìbéèrè tó wúlò nípa mímu ọmú, jíjí àti àmì ewu."], ["Mọ ìgbésẹ̀ tó kàn", "Ètò náà fi ìtọ́sọ́nà pajawiri, ìṣàyẹ̀wò lónìí, tàbí ìṣọ́ra hàn ní èdè tó rọrùn."], ["Wá ibi ìtọ́jú tó yẹ", "Lo ibi tí o wà tàbí yan ìpínlẹ̀ àti LGA láti rí ilé ìwòsàn àti iṣẹ́ tí wọ́n ní."], ["Máa kọ́ ẹ̀kọ́ sí i", "Ìwífún ìtọ́jú ọmọ tuntun ní ọ̀pọ̀ èdè wà nígbà tí òbí bá nílò rẹ."],],
+    parentEyebrow: "Fún òbí àti olùtọ́jú", parentTitle: "Ìbànújẹ kan. Ìgbésẹ̀ kan tó yé ẹni.", parentItems: ["Fi ìwòye ọmọ pamọ́ lẹ́ẹ̀kan.", "Lo ìṣàyẹ̀wò ìtọ́sọ́nà nígbà tí o bá ní ìbànújẹ.", "Pa ìtàn ìṣàyẹ̀wò mọ́ fún àtẹ̀lé."], parentAction: "Ṣí ìtìlẹ́yìn òbí", 
+    workerEyebrow: "Fún ẹgbẹ́ ìtọ́jú àdúgbò", workerTitle: "Ṣe ìtìlẹ́yìn fún ìdílé níbi tí wọ́n wà.", workerItems: ["Lo ìbéèrè tó ṣètò nípa ewu ọmọ tuntun.", "Kọ ìjíròrò àtẹ̀lé sílẹ̀ kedere.", "Fi àmì ewu ránṣẹ́ sí ilé ìwòsàn láì pẹ́."], workerNote: "A ń pèsè àkọọ́lẹ̀ àwọn òṣìṣẹ́ àdúgbò nípasẹ̀ ètò ìtọ́jú.",
+    languageEyebrow: "Èdè kò gbọ́dọ̀ jẹ́ ìdènà", languageTitle: "Ìtọ́sọ́nà ìtọ́jú ní ọ̀rọ̀ tí ìdílé ń lò lójoojúmọ́.",
+    ctaEyebrow: "Bẹ̀rẹ̀ pẹ̀lú ohun tó ṣe pàtàkì báyìí", ctaTitle: "Ṣe o ń ṣàníyàn nípa ọmọ tuntun? Bẹ̀rẹ̀ ìṣàyẹ̀wò ìtọ́sọ́nà.", ctaAction: "Ṣí JaundiCare", androidAction: "Gba ohun èlò Android",
+  },
+  ha: {
+    visualTop: "Lura da canji da wuri", visualMiddle: "Ƙananan matakai. Bayyanannen mataki na gaba.", visualBottom: "Sami mataki na gaba da ya dace",
+    madeFor: "An yi don masu kula masu aiki", featureTitle: "Tallafin da yake a sarari kafin tsoro ya mamaye zuciya.",
+    features: [["Yi bincike da jagora", "Yi amfani da hoton jariri tare da tambayoyi masu amfani kan shan nono, farkawa da alamun haɗari."], ["San mataki na gaba", "Manhajar tana nuna gaggawa, dubawa a yau ko sa ido cikin harshe mai sauƙi."], ["Nemo wurin kulawa da ya dace", "Yi amfani da wurinka ko zaɓi Jiha/LGA don ganin cibiyoyi da ayyukansu."], ["Ci gaba da koyo", "Ana samun bayanin kula da jarirai cikin harsuna da yawa lokacin da iyaye suke bukata."],],
+    parentEyebrow: "Don iyaye da masu kula", parentTitle: "Damuwa guda. Mataki guda bayyananne.", parentItems: ["Ajiye bayanin jariri sau ɗaya.", "Yi amfani da bincike mai jagora idan kana damuwa.", "Ajiye tarihin bincike don bibiyar kulawa."], parentAction: "Buɗe tallafin iyaye",
+    workerEyebrow: "Don ƙungiyoyin kula da al'umma", workerTitle: "Tallafa wa iyalai kusa da gidajensu.", workerItems: ["Yi amfani da tambayoyin haɗarin jariri da aka tsara.", "Rubuta tattaunawar bibiyar kulawa a sarari.", "Tura alamar haɗari ba tare da jinkiri ba."], workerNote: "Ana samar da asusun ma'aikatan al'umma ta shirin kulawa.",
+    languageEyebrow: "Harshe bai kamata ya zama shamaki ba", languageTitle: "Jagorar kulawa cikin kalmomin da iyalai ke amfani da su kowace rana.",
+    ctaEyebrow: "Fara da abin da yake da muhimmanci yanzu", ctaTitle: "Kana damuwa da jariri? Fara bincike mai jagora.", ctaAction: "Buɗe JaundiCare", androidAction: "Sami manhajar Android",
+  },
+  ig: {
+    visualTop: "Rịba mgbanwe n'oge", visualMiddle: "Nzọụkwụ nta. Omume ọzọ doro anya.", visualBottom: "Nweta usoro ọzọ kwesịrị ekwesị",
+    madeFor: "E mere maka ndị nlekọta na-arụsi ọrụ ike", featureTitle: "Nkwado doro anya tupu egwu ejide obi.",
+    features: [["Nyochaa site na ntụziaka", "Jiri foto nwa na ajụjụ bara uru gbasara iri nri, iteta na ihe ịrịba ama ize ndụ."], ["Hụ omume ọzọ", "Ngwa ahụ na-egosi ihe mberede, nyocha taa, ma ọ bụ nlekọta n'asụsụ dị mfe."], ["Chọta ebe nlekọta kwesịrị ekwesị", "Jiri ebe ị nọ ma ọ bụ họrọ Steeti/LGA ka ịhụ ụlọ ọrụ na ọrụ ha."], ["Na-amụtakwu", "Ozi nlekọta nwa ọhụrụ n'ọtụtụ asụsụ dị mgbe nne na nna chọrọ ya."],],
+    parentEyebrow: "Maka nne na nna na ndị nlekọta", parentTitle: "Otu nchegbu. Otu usoro ọzọ doro anya.", parentItems: ["Chekwaa profaịlụ nwa otu ugboro.", "Jiri nyocha a na-eduzi mgbe ị na-echegbu onwe gị.", "Debe akụkọ nyocha maka nlekọta ọzọ."], parentAction: "Mepee nkwado nne na nna",
+    workerEyebrow: "Maka ndị otu nlekọta obodo", workerTitle: "Kwado ezinụlọ nso n'ụlọ ha.", workerItems: ["Jiri ajụjụ ihe ize ndụ nwa ọhụrụ a haziri ahazi.", "Detuo mkparịta ụka nlekọta ọzọ nke ọma.", "Zipu ihe ịrịba ama ize ndụ na-enweghị igbu oge."], workerNote: "A na-enye akaụntụ ndị ọrụ obodo site na mmemme nlekọta.",
+    languageEyebrow: "Asụsụ ekwesịghị ịbụ ihe mgbochi", languageTitle: "Ntuziaka nlekọta n'okwu ezinụlọ na-eji kwa ụbọchị.",
+    ctaEyebrow: "Bido n'ihe dị mkpa ugbu a", ctaTitle: "Ị na-echegbu onwe gị banyere nwa ọhụrụ? Bido nyocha a na-eduzi.", ctaAction: "Mepee JaundiCare", androidAction: "Nweta ngwa Android",
+  },
+  pcm: {
+    visualTop: "Notice change early", visualMiddle: "Small step. Clear next action.", visualBottom: "Get the correct next step",
+    madeFor: "For busy people wey dey care for pikin", featureTitle: "Support wey clear before fear take over.",
+    features: [["Check with guide", "Use baby photo with better questions about feeding, alertness and danger sign."], ["See wetin to do next", "The app go show urgent, same-day or monitoring guide with simple words."], ["Find correct care", "Use your location or choose State/LGA to find health centre and the services wey dem get."], ["Keep learning", "Simple newborn-care information dey for different language when parent need am."],],
+    parentEyebrow: "For parents and people wey dey care for pikin", parentTitle: "One concern. One clear next step.", parentItems: ["Save baby profile once.", "Use guided screening when you worry.", "Keep screening history for follow-up."], parentAction: "Open parent support",
+    workerEyebrow: "For community care team", workerTitle: "Support families close to their house.", workerItems: ["Use structured newborn risk questions.", "Write follow-up talk clearly.", "Send danger sign for help sharp sharp."], workerNote: "Care programme dey provide community account.",
+    languageEyebrow: "Language no suppose be barrier", languageTitle: "Care guide for words wey families dey use every day.",
+    ctaEyebrow: "Start with wetin matter now", ctaTitle: "You dey worry about newborn? Start guided check.", ctaAction: "Open JaundiCare", androidAction: "Get Android app",
+  },
+};

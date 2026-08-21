@@ -19,6 +19,7 @@ import igboTranslations from "../i18n/ig.json";
 import pidginTranslations from "../i18n/pcm.json";
 import { uiTranslations } from "./uiTranslations";
 import { legalContent } from "./legalContent";
+import { landingContent } from "./landingContent";
 
 const languages = [
   ["en", "English"],
@@ -163,6 +164,7 @@ function SiteHeader({ language, onLanguageChange, navigate, page, t }) {
 
 function Landing({ navigate, t, language }) {
   const downloadUrl = import.meta.env.VITE_ANDROID_DOWNLOAD_URL;
+  const copy = landingContent[language] || landingContent.en;
   return (
     <main>
       <section className="hero">
@@ -173,7 +175,7 @@ function Landing({ navigate, t, language }) {
           <div className="hero-actions">
             <button className="button" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Open web app")}</button>
             {downloadUrl ? (
-              <a className="button button-secondary" href={downloadUrl}>Get Android app</a>
+              <a className="button button-secondary" href={downloadUrl}>{copy.androidAction}</a>
             ) : (
               <button className="button button-secondary" onClick={() => navigate("/app")}>{t("dashboard.start_check", "Start a baby check")}</button>
             )}
@@ -182,14 +184,14 @@ function Landing({ navigate, t, language }) {
           <WelcomeAudioButton language={language} t={t} />
         </div>
         <div className="hero-visual" aria-label="Simple illustration of parent support">
-          <div className="signal-card signal-top"><span>1</span> Notice changes early</div>
+          <div className="signal-card signal-top"><span>1</span> {copy.visualTop}</div>
           <div className="parent-card">
             <div className="sun" />
             <div className="parent-figure"><span className="head" /><span className="body" /></div>
             <div className="baby-figure"><span className="baby-head" /><span className="baby-body" /></div>
-            <p>Small steps. Clear next action.</p>
+            <p>{copy.visualMiddle}</p>
           </div>
-          <div className="signal-card signal-bottom"><span>2</span> Get the right next step</div>
+          <div className="signal-card signal-bottom"><span>2</span> {copy.visualBottom}</div>
         </div>
       </section>
 
@@ -199,43 +201,36 @@ function Landing({ navigate, t, language }) {
       </section>
 
       <section className="section-wrap">
-        <p className="eyebrow">Made for busy caregivers</p>
-        <h2>Support that is clear before fear takes over.</h2>
+        <p className="eyebrow">{copy.madeFor}</p>
+        <h2>{copy.featureTitle}</h2>
         <div className="feature-grid">
-          <Feature number="01" title="Screen with guidance" text="Use a baby photo together with practical questions about feeding, alertness and warning signs." />
-          <Feature number="02" title="See the next action" text="The app presents urgent, same-day or monitoring guidance in plain language." />
-          <Feature number="03" title="Find appropriate care" text="Use location or a manual State/LGA choice to find facilities and their services." />
-          <Feature number="04" title="Keep learning" text="Simple, multilingual newborn-care information is available when a parent needs it." />
+          {copy.features.map(([title, text], index) => <Feature key={title} number={`0${index + 1}`} title={title} text={text} />)}
         </div>
       </section>
 
       <section className="two-column-section">
         <article className="path-card parent-path">
-          <p className="eyebrow">For parents and caregivers</p>
-          <h2>One concern. One clear next step.</h2>
+          <p className="eyebrow">{copy.parentEyebrow}</p>
+          <h2>{copy.parentTitle}</h2>
           <ul>
-            <li>Save a baby profile once.</li>
-            <li>Use guided screening when worried.</li>
-            <li>Keep the screening history for follow-up.</li>
+            {copy.parentItems.map((item) => <li key={item}>{item}</li>)}
           </ul>
-          <button className="text-button" onClick={() => navigate("/app")}>Open parent support <span>→</span></button>
+          <button className="text-button" onClick={() => navigate("/app")}>{copy.parentAction} <span>→</span></button>
         </article>
         <article className="path-card worker-path">
-          <p className="eyebrow">For community care teams</p>
-          <h2>Support families closer to home.</h2>
+          <p className="eyebrow">{copy.workerEyebrow}</p>
+          <h2>{copy.workerTitle}</h2>
           <ul>
-            <li>Use structured newborn risk questions.</li>
-            <li>Document follow-up conversations clearly.</li>
-            <li>Escalate urgent signs without delay.</li>
+            {copy.workerItems.map((item) => <li key={item}>{item}</li>)}
           </ul>
-          <p className="muted">Community accounts are provisioned by the care programme.</p>
+          <p className="muted">{copy.workerNote}</p>
         </article>
       </section>
 
       <section className="section-wrap language-section">
         <div>
-          <p className="eyebrow">Language should not be a barrier</p>
-          <h2>Care guidance in words families use every day.</h2>
+          <p className="eyebrow">{copy.languageEyebrow}</p>
+          <h2>{copy.languageTitle}</h2>
         </div>
         <div className="language-pills">
           {languages.map(([, label]) => <span key={label}>{label}</span>)}
@@ -244,10 +239,10 @@ function Landing({ navigate, t, language }) {
 
       <section className="cta-section">
         <div>
-          <p className="eyebrow">Start with what matters now</p>
-          <h2>Worried about a newborn? Begin a guided check.</h2>
+          <p className="eyebrow">{copy.ctaEyebrow}</p>
+          <h2>{copy.ctaTitle}</h2>
         </div>
-        <button className="button button-light" onClick={() => navigate("/app")}>Open JaundiCare</button>
+        <button className="button button-light" onClick={() => navigate("/app")}>{copy.ctaAction}</button>
       </section>
     </main>
   );
@@ -308,9 +303,7 @@ function AuthCard({ language, t, onVerified, navigate }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [role, setRole] = useState("parent");
   const normalisedPhone = formatNigerianPhone(phone);
-  const allowDemoRoleSelection = import.meta.env.VITE_DEMO_AUTH_ENABLED === "true";
 
   const sendCode = async (event) => {
     event.preventDefault();
@@ -321,7 +314,7 @@ function AuthCard({ language, t, onVerified, navigate }) {
     }
     setBusy(true);
     try {
-      const result = await requestOtp({ phoneNumber: normalisedPhone, language, role });
+      const result = await requestOtp({ phoneNumber: normalisedPhone, language });
       setNotice(result.message || t("ui.auth.send_code", "Verification code sent."));
       setStep("code");
     } catch (requestError) {
@@ -366,7 +359,7 @@ function AuthCard({ language, t, onVerified, navigate }) {
         <h2>{step === "phone" ? t("ui.auth.phone_title", "Enter your phone number") : t("ui.auth.enter_code", "Enter your verification code")}</h2>
         <p>{step === "phone" ? t("ui.auth.phone_intro", "We will send a one-time code to continue.") : `${t("ui.auth.sent_code", "We sent a code to")} ${phone}.`}</p>
         {step === "phone" ? (
-          <><label className="form-field"><span>{t("ui.auth.phone_number", "Phone number")}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>{allowDemoRoleSelection && <label className="form-field"><span>Demo workspace</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="parent">{t("ui.onboarding.parent", "Parent support")}</option><option value="health_worker">{t("ui.onboarding.health_worker", "Community care")}</option></select><small>This choice is available only for approved demonstration phones.</small></label>}</>
+          <label className="form-field"><span>{t("ui.auth.phone_number", "Phone number")}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0801 234 5678" /></label>
         ) : (
           <label className="form-field"><span>{t("ui.auth.enter_code", "Six-digit code")}</span><input autoFocus autoComplete="one-time-code" inputMode="numeric" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} placeholder="123456" /></label>
         )}
@@ -781,7 +774,8 @@ function LegalPage({ type, navigate, t, language }) {
 
 function SiteFooter({ navigate, t }) {
   const contact = import.meta.env.VITE_CONTACT_EMAIL;
-  return <footer className="site-footer"><div><button className="brand footer-brand" onClick={() => navigate("/")}><span className="brand-mark">J</span><span><strong>JaundiCare</strong><small>{t("app.support", "Newborn care support")}</small></span></button><p>{t("trust.body", "Screening support, not medical diagnosis.")}</p></div><div className="footer-links"><button onClick={() => navigate("/privacy")}>{t("ui.legal.privacy", "Privacy Notice")}</button><button onClick={() => navigate("/terms")}>{t("ui.legal.terms", "Terms of Use")}</button>{contact && <a href={`mailto:${contact}`}>Contact</a>}</div><small>© {new Date().getFullYear()} JaundiCare. {t("trust.title", "Screening support, not medical diagnosis.")}</small></footer>;
+  const parentCompany = import.meta.env.VITE_PARENT_COMPANY_NAME?.trim();
+  return <footer className="site-footer"><div><button className="brand footer-brand" onClick={() => navigate("/")}><span className="brand-mark">J</span><span><strong>JaundiCare</strong><small>{t("app.support", "Newborn care support")}</small></span></button><p>{t("trust.body", "Screening support, not medical diagnosis.")}</p></div><div className="footer-links"><button onClick={() => navigate("/privacy")}>{t("ui.legal.privacy", "Privacy Notice")}</button><button onClick={() => navigate("/terms")}>{t("ui.legal.terms", "Terms of Use")}</button>{contact && <a href={`mailto:${contact}`}>Contact</a>}</div><address className="business-address"><strong>{t("ui.company.address", "Business address")}</strong><span>Adenekan Street, Alakuko, Ifako-Ijaye, Lagos, Nigeria</span>{parentCompany && <span>{t("ui.company.product_of", "A product of")} {parentCompany}</span>}</address><small>© {new Date().getFullYear()} JaundiCare. {t("trust.title", "Screening support, not medical diagnosis.")}</small></footer>;
 }
 
 export default App;

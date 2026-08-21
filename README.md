@@ -9,7 +9,7 @@ It is designed for lower-end Android phones and unreliable networks. The experie
 ## What is included
 
 - Phone-number sign-in using one-time passcodes.
-- A presentation-safe OTP mode for three pre-authorised team phones.
+- Live SMS verification through the approved sender ID.
 - Parent profiles, baby profiles, screening history, and symptom-based risk triage.
 - On-device ONNX inference for Android and server-side PyTorch inference.
 - Image validation, consented image storage, and private signed image access.
@@ -28,7 +28,7 @@ web/            React/Vite public website and authenticated browser companion
 render.yaml     Render blueprint for the API (using an externally supplied database)
 ```
 
-## Fast demo: use the built Android APK
+## Install the Android APK
 
 The verified release APK is at:
 
@@ -61,7 +61,7 @@ API URL, so it does **not** need a rebuild for this database migration.
 
 The Supabase Free plan is suitable for the MVP, but it has a 500 MB database
 limit and pauses inactive projects after one week. Use an uptime check or open
-the project before a demo, and plan a paid/managed database before clinical
+the project before a test session, and plan a paid/managed database before clinical
 production.
 
 The root [`render.yaml`](render.yaml) and [`backend/render.yaml`](backend/render.yaml)
@@ -92,51 +92,45 @@ CLOUDINARY_API_KEY           optional, needed for consented cloud image storage
 CLOUDINARY_API_SECRET        optional, needed for consented cloud image storage
 TERMII_API_KEY               required only for live SMS delivery
 TERMII_BASE_URL              required only for live SMS delivery
-TERMII_SENDER_ID             approved sender ID for live SMS delivery
+TERMII_SENDER_ID             approved sender ID: OE Alert
 CORS_ALLOWED_ORIGINS         exact allowed browser origin(s), comma-separated
 ALLOWED_HOSTS                Render API hostname
 MAMABOT_API_KEY              required for live MamaBot responses
 VAXAI_API_KEY                required for live VaxAI responses
 MAMABOT_URL                  optional override for MamaBot endpoint
 VAXAI_URL                    optional override for VaxAI endpoint
-CONSULTATION_DEMO_MODE       keep false when using the live assistants
 ```
 
 Use `https://your-service.onrender.com` as the mobile API URL. A native Android app does not need CORS, but any deployed browser frontend must be added to `CORS_ALLOWED_ORIGINS` exactly.
 
-## Presentation OTP mode
+## Live SMS and community-worker accounts
 
-This mode is deliberately restricted. It accepts only three pre-authorised Nigerian phone numbers, so arbitrary users cannot sign in as a parent or community health worker during the demo.
-
-On Render, set these values and redeploy:
-
-```text
-ENVIRONMENT=demo
-OTP_DELIVERY_MODE=demo
-DEMO_AUTH_ENABLED=true
-
-DEMO_ALLOWED_PHONE_1=2348012345678
-DEMO_OTP_CODE_1=123456
-DEMO_ALLOWED_PHONE_2=2348012345679
-DEMO_OTP_CODE_2=234567
-DEMO_ALLOWED_PHONE_3=2348012345680
-DEMO_OTP_CODE_3=345678
-
-CONSULTATION_DEMO_MODE=false
-```
-
-Replace the sample values. Each phone must be `234` followed by ten digits: no `+`, spaces, or leading zero. Use a different six-digit code for each phone.
-
-Each approved phone may rehearse either interface: choose Parent or Community Care during onboarding before requesting the code. That switch is accepted only while the restricted presentation OTP mode is active; normal live-SMS registration remains parent-only unless an administrator provisions a health-worker account.
-
-When live SMS is ready, restore:
+Set these values in Render and redeploy the API:
 
 ```text
 ENVIRONMENT=production
-OTP_DELIVERY_MODE=termii
-DEMO_AUTH_ENABLED=false
-CONSULTATION_DEMO_MODE=false
+TERMII_API_KEY=your_private_key
+TERMII_BASE_URL=your_account_specific_base_url
+TERMII_SENDER_ID=OE Alert
 ```
+
+Use the exact account-specific base URL from the Termii dashboard. New public
+sign-ins always create a parent account. This prevents a caller from assigning
+themselves a clinical role.
+
+To provision a community-health-worker account, let that person complete one
+live SMS sign-in first, then run this in the Supabase SQL editor with their
+normalised phone number (`234` followed by ten digits):
+
+```sql
+UPDATE users
+SET role = 'health_worker'
+WHERE phone_number = '2348012345678';
+```
+
+They should sign out and sign in again afterwards. Build a permissioned
+administrator workflow before allowing anyone other than a trusted operator to
+run this change.
 
 ## Build the Android app
 
@@ -214,10 +208,10 @@ symptom-only safety guidance. It will sync when the same signed-in account
 reconnects. This is a continuity feature, not an alternative to the Android
 offline implementation; users can remove queued items from the connection bar.
 
-`VITE_DEMO_AUTH_ENABLED` must remain `false` in a public deployment. It merely
-shows the demo role selector in the browser; the API remains responsible for
-allowing it and must itself be in the restricted demo OTP mode. A normal browser
-visitor can never self-assign a community-health-worker role.
+Set `VITE_PARENT_COMPANY_NAME` in Vercel only after you have the exact legal
+parent-company name. It is shown in the footer as “A product of …”. The footer
+also contains JaundiCare's business address: Adenekan Street, Alakuko,
+Ifako-Ijaye, Lagos, Nigeria.
 
 Verify the production bundle before deployment:
 
@@ -231,8 +225,8 @@ npm run build
    `web`.
 2. Use build command `npm run build` and output directory `dist`.
 3. Add `VITE_API_BASE_URL=https://your-service.onrender.com` in Vercel's
-   Environment Variables, then redeploy. Add the optional public download and
-   contact values only when they are ready.
+   Environment Variables, then redeploy. Add the optional public download,
+   contact, and verified `VITE_PARENT_COMPANY_NAME` values only when ready.
 4. Add your custom domain in Vercel and wait for HTTPS to be issued. The public
    routes will be `https://your-domain/`, `/privacy`, `/terms`, and `/app`.
 5. In Render, set `CORS_ALLOWED_ORIGINS` to the exact browser origins, for
@@ -280,13 +274,17 @@ The local API is available at `http://127.0.0.1:8000`; interactive API documenta
 - Community health worker privileges are assigned server-side, never by a client-side role selection.
 - Uploaded images are checked by byte content, size-limited, re-encoded, and cleaned up on processing failure.
 - Training-image storage is disabled by default. It requires explicit consent and a configured storage provider.
+- GPS is used transiently to rank nearby facilities. Completed screenings retain the
+  confirmed State/LGA and coordinates rounded to two decimal places (about 1 km),
+  not a precise location trail. Planning reports must use aggregated, de-identified
+  data with small-number suppression.
 - Do not log phone numbers, OTP codes, tokens, baby images, or Cloudinary credentials.
 
 ## Quick verification checklist
 
 1. `/health` returns a successful response after the Render deployment.
-2. A pre-authorised demo phone completes OTP verification.
+2. A real phone receives and completes an OTP sent from `OE Alert`.
 3. Switching welcome languages produces one narration at a time; moving forward stops narration.
 4. **Find care nearby** produces location-based or manual State/LGA results and opens map directions.
-5. The designated demo community-health-worker phone sees Community Care after sign-in.
+5. A deliberately provisioned community-health-worker account sees Community Care after sign-in.
 6. `npm run typecheck` and `python -m compileall -q app` succeed before submitting changes.
