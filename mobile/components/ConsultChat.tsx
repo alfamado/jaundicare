@@ -440,8 +440,8 @@
 
 /**
  * JaundiCare — ConsultChat component
- * Reusable chat UI for MamaBot and VaxAI consultations.
- * Used inside care.tsx (MamaBot) and chw.tsx (VaxAI).
+ * Reusable chat UI for JaundiCare's source-bounded assistant routes.
+ * It never talks directly to a model provider; Render owns that boundary.
  */
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
@@ -452,6 +452,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Fonts, Radius, Shadow } from "../constants/colors";
 import api from "../services/api";
+import { useTranslations } from "../hooks/useTranslations";
 
 interface Message {
   id: string;
@@ -461,7 +462,7 @@ interface Message {
 }
 
 interface Props {
-  endpoint: "mamabot" | "vaxai";
+  endpoint: "newborn-care" | "immunisation-ng";
   title: string;
   subtitle: string;
   placeholder: string;
@@ -472,12 +473,14 @@ interface Props {
 export function ConsultChat({
   endpoint, title, subtitle, placeholder, accentColor, suggestedQuestions,
 }: Props) {
+  const { language } = useTranslations();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const restingWindowHeight = useRef(Dimensions.get("window").height);
+  const sessionId = useRef(`jc_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`);
 
   const scrollToLatest = useCallback(() => {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
@@ -527,15 +530,15 @@ export function ConsultChat({
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
-    // The backend can wait up to 30 seconds for an upstream assistant. Allow
-    // enough time for that response and normal mobile-network latency.
+    // The hosted assistant can take a moment on a slow mobile network. The
+    // client still receives a source-backed fallback if model inference fails.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const { data } = await api.post(
-        `/consult/${endpoint}`,
-        { message: trimmedText },
+        `/v1/assistants/${endpoint}/respond`,
+        { message: trimmedText, language, session_id: sessionId.current },
         { signal: controller.signal },
       );
       

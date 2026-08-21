@@ -16,7 +16,7 @@ It is designed for lower-end Android phones and unreliable networks. The experie
 - Nearby-facility discovery using GPS or a manual State/LGA fallback.
 - Nearest, government, and clinic/private facility preferences, capability tags, telephone links, and map directions.
 - Recorded onboarding audio and interface translations in five languages.
-- Parent access to MamaBot, plus Community Care and VaxAI for an authorised community health worker account.
+- JaundiCare Care Guide and Immunisation Guide, powered by the reusable ClinixTech Assist Core.
 - Offline-friendly caching and queued screening submission.
 
 ## Repository layout
@@ -95,13 +95,130 @@ TERMII_BASE_URL              required only for live SMS delivery
 TERMII_SENDER_ID             approved sender ID: OE Alert
 CORS_ALLOWED_ORIGINS         exact allowed browser origin(s), comma-separated
 ALLOWED_HOSTS                Render API hostname
-MAMABOT_API_KEY              required for live MamaBot responses
-VAXAI_API_KEY                required for live VaxAI responses
-MAMABOT_URL                  optional override for MamaBot endpoint
-VAXAI_URL                    optional override for VaxAI endpoint
+CLINIX_ASSIST_PROVIDER        retrieval (safe fallback) or cloudflare (hosted Meta Llama)
+CLOUDFLARE_ACCOUNT_ID         required only when CLINIX_ASSIST_PROVIDER=cloudflare
+CLOUDFLARE_AI_API_TOKEN       private Workers AI token; Render only
+CLOUDFLARE_LLAMA_MODEL        @cf/meta/llama-3.1-8b-instruct-fp8 by default
+CLINIX_ASSIST_TIMEOUT_SECONDS hosted inference timeout; 25 by default
 ```
 
 Use `https://your-service.onrender.com` as the mobile API URL. A native Android app does not need CORS, but any deployed browser frontend must be added to `CORS_ALLOWED_ORIGINS` exactly.
+
+## ClinixTech Assist Core
+
+JaundiCare is the first client of **ClinixTech Assist Core**: a stateless,
+source-bounded health-information layer designed to be reused by future
+ClinixTech products without making an external chatbot the product boundary.
+
+```text
+Mobile app / web client
+        -> JaundiCare API on Render
+        -> danger-sign rules + JaundiCare knowledge pack
+        -> hosted Meta Llama provider (optional)
+```
+
+The client never receives the provider credential. Render receives one request
+at a time, applies danger-sign rules before model inference, sends only the
+minimised current question plus retrieved source material to the configured
+provider, and does not store the question or reply. Before an external model
+call, the service removes common phone numbers, emails and direct self-reported
+names. Clients must still ask users not to type names, phone numbers, hospital
+record numbers or other identifiers. A `session_id` is client-generated
+correlation only; it is not server-side conversation memory.
+
+The model is additionally bypassed for recognised newborn danger signs and
+attempts to override its instructions. These rule sets are deliberately
+conservative and must gain clinician-reviewed Yoruba, Hausa and Igbo trigger
+terms before they are described as fully multilingual safety automation.
+
+Current first-party routes require the user's normal JaundiCare access token:
+
+```text
+POST /v1/assistants/newborn-care/respond
+POST /v1/assistants/immunisation-ng/respond
+```
+
+They return a response, a conservative action (`urgent`, `same_day`, or
+`information`), source citations, content version, and an operational provider
+label. These routes are for JaundiCare's signed-in users, not external clients.
+
+### Future ClinixTech partner API
+
+The repository also contains the separately authenticated partner route:
+
+```text
+POST /v1/partner/assistants/{assistant}/respond
+Header: X-Clinix-API-Key: cxt_live_…
+```
+
+It is disabled by default with `CLINIX_PARTNER_API_ENABLED=false`. When it is
+deliberately enabled, a project key is checked against its own scopes and
+allowed assistants, and receives a separate per-project quota. It cannot be
+used as a JaundiCare parent/CHW credential. The only initial assistant names
+are `newborn-care` and `immunisation-ng`.
+
+Create a project and display one new key exactly once from a secure
+administrator environment:
+
+```powershell
+cd backend
+python scripts/create_clinix_api_key.py --name "Example clinic" --slug example-clinic --assistants newborn-care,immunisation-ng
+```
+
+For rotation, create a replacement, update and verify the partner's server,
+then revoke the old prefix:
+
+```powershell
+python scripts/revoke_clinix_api_key.py --prefix cxt_live_ab12cd34ef56
+```
+
+Use a server-to-server request; never expose a `cxt_live_…` secret in an Expo
+app, Vite site, browser request, or Git repository:
+
+```bash
+curl -X POST "https://your-service.onrender.com/v1/partner/assistants/newborn-care/respond" \
+  -H "Content-Type: application/json" \
+  -H "X-Clinix-API-Key: cxt_live_..." \
+  -d '{"message":"My baby is yellow and not feeding well","language":"en","session_id":"client_generated_id"}'
+```
+
+Before external launch, complete a clinical-content review, API-key rotation
+and revocation workflow, an acceptable-use policy, consent terms for clients,
+and monitoring/incident response. Do not market this route as diagnosis or
+emergency care.
+
+### Enable hosted Meta Llama on Render
+
+The default `CLINIX_ASSIST_PROVIDER=retrieval` is a deployed, source-backed
+fallback. It works without an LLM and is useful if a provider is unavailable,
+but it is deliberately limited to the small source-backed content pack.
+
+To enable hosted inference, create a Cloudflare Workers AI account and an API
+token with only the permissions Cloudflare currently requires for Workers AI
+inference, then set these **only in Render**:
+
+```text
+CLINIX_ASSIST_PROVIDER=cloudflare
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_AI_API_TOKEN=your_private_workers_ai_token
+CLOUDFLARE_LLAMA_MODEL=@cf/meta/llama-3.1-8b-instruct-fp8
+CLINIX_ASSIST_TIMEOUT_SECONDS=25
+```
+
+Do not add any of these values to Expo, Vercel, `.env` files committed to Git,
+or a browser-facing `VITE_` variable. The local Ollama configuration in
+`backend/.env.example` is only for development and prompt evaluation; neither
+Render nor a user's phone needs to run the model file.
+
+Enabling a hosted provider means the minimised current question is processed by
+that provider. Before clinical deployment, review the provider's current data
+handling terms, choose the appropriate account controls, and record that
+decision in ClinixTech's privacy documentation.
+
+The initial knowledge cards cite WHO newborn-feeding, newborn-care, and
+Nigeria immunisation sources. Their `clinical_review_required` status is
+intentional: expand or change any medical content only through a documented
+clinical review and content-versioning process.
 
 ## Live SMS and community-worker accounts
 
@@ -179,7 +296,8 @@ an easy-to-understand product page, privacy notice, terms of use, and a secure
 browser companion at `/app`. The browser companion uses the same FastAPI API as
 the mobile app and keeps authentication tokens only in the current browser
 session. It includes the five recorded welcome narrations, parent screening,
-facilities and directions, history, care guidance, MamaBot and VaxAI. A
+facilities and directions, history, care guidance, and the Care and
+Immunisation Guides. A
 provisioned community-health-worker account also receives assisted screening,
 its own activity summary, and the bilirubin reference tool.
 

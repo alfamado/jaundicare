@@ -519,7 +519,7 @@ function AuthenticatedApp({ user, setUser, language, t }) {
           {isHealthWorker && tab === "bhutani" && <BhutaniReference t={t} />}
         </div>
       )}
-      <AssistantHub t={t} />
+      <AssistantHub t={t} language={language} />
     </main>
   );
 }
@@ -765,15 +765,15 @@ function BhutaniReference({ t }) {
   return <section className="bhutani-panel"><div><p className="eyebrow">Clinical reference</p><h2>Hour-specific bilirubin reference</h2><p>Use only when a measured total serum bilirubin value is available. This reference does not replace clinical judgement or treatment thresholds.</p></div><div className="form-grid compact-form"><Field label="Age in hours (12–120)"><input type="number" min="0" max="8760" value={ageHours} onChange={(event) => setAgeHours(event.target.value)} placeholder="e.g. 48" /></Field><Field label="Total bilirubin (mg/dL)"><input type="number" min="0" step="0.1" value={bilirubin} onChange={(event) => setBilirubin(event.target.value)} placeholder="e.g. 12.4" /></Field></div>{result && <article className={`bhutani-result ${result.tone}`}><p className="eyebrow">Reference zone</p><h3>{result.zone}</h3><p>{result.action}</p>{result.thresholds && <small>At {ageHours} hours: 40th {result.thresholds.p40} · 75th {result.thresholds.p75} · 95th {result.thresholds.p95} mg/dL.</small>}</article>}<p className="clinical-note">Reference: Bhutani et al., Pediatrics (1999), hour-specific bilirubin percentile curves for healthy term and near-term newborns.</p></section>;
 }
 
-function AssistantHub({ t }) {
+function AssistantHub({ t, language }) {
   const [open, setOpen] = useState(false);
-  const [assistant, setAssistant] = useState("mamabot");
+  const [assistant, setAssistant] = useState("newborn-care");
   const [message, setMessage] = useState("");
-  const [chats, setChats] = useState({ mamabot: [], vaxai: [] });
+  const [chats, setChats] = useState({ "newborn-care": [], "immunisation-ng": [] });
   const [busy, setBusy] = useState(false);
-  const chatIds = useRef({ mamabot: newChatId(), vaxai: newChatId() });
-  const labels = { mamabot: "MamaBot", vaxai: "VaxAI" };
-  const suggestions = assistant === "vaxai" ? ["What vaccines are due for a baby at birth in Nigeria?", "When should my baby receive the next vaccines?"] : ["How often should I breastfeed my newborn?", "My baby is sleepy during feeds. What should I do?"];
+  const chatIds = useRef({ "newborn-care": newChatId(), "immunisation-ng": newChatId() });
+  const labels = { "newborn-care": "Care Guide", "immunisation-ng": "Immunisation Guide" };
+  const suggestions = assistant === "immunisation-ng" ? ["What vaccines are due for a baby at birth in Nigeria?", "When should my baby receive the next vaccines?"] : ["How often should I breastfeed my newborn?", "My baby is sleepy during feeds. What should I do?"];
 
   const sendQuestion = async (value) => {
     const text = value.trim();
@@ -782,7 +782,7 @@ function AssistantHub({ t }) {
     setChats((current) => ({ ...current, [assistant]: [...current[assistant], { role: "user", text }] }));
     setBusy(true);
     try {
-      const data = await request(`/consult/${assistant}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, chat_id: chatIds.current[assistant] }) });
+      const data = await request(`/v1/assistants/${assistant}/respond`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, language, session_id: chatIds.current[assistant] }) });
       setChats((current) => ({ ...current, [assistant]: [...current[assistant], { role: "assistant", text: data.response || "I could not read that response. Please try again." }] }));
     } catch (requestError) {
       setChats((current) => ({ ...current, [assistant]: [...current[assistant], { role: "assistant", text: requestError.message } ] }));
@@ -791,7 +791,7 @@ function AssistantHub({ t }) {
     }
   };
 
-  return <aside className={`chat-widget ${open ? "chat-open" : ""}`}><button className="chat-toggle" onClick={() => setOpen(!open)}>{open ? t("web.chat.close", "Close assistants") : t("web.chat.open", "Ask an assistant")}</button>{open && <div className="chat-body"><div className="assistant-tabs"><button className={assistant === "mamabot" ? "assistant-active" : ""} onClick={() => setAssistant("mamabot")}>MamaBot</button><button className={assistant === "vaxai" ? "assistant-active" : ""} onClick={() => setAssistant("vaxai")}>VaxAI</button></div><p><strong>{labels[assistant]}</strong><br />{assistant === "mamabot" ? "Newborn-care education support." : "Childhood vaccination education support."}</p><div className="suggestion-row">{suggestions.map((suggestion) => <button disabled={busy} key={suggestion} onClick={() => void sendQuestion(suggestion)}>{suggestion}</button>)}</div><div className="chat-messages" aria-live="polite">{chats[assistant].length === 0 && <span>{t("web.chat.empty", "Choose a suggested question or type your own below.")}</span>}{chats[assistant].map((item, index) => <p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{busy && <span>{t("web.chat.thinking", "Thinking…")}</span>}</div><form onSubmit={(event) => { event.preventDefault(); void sendQuestion(message); }}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("web.chat.placeholder", "Type your question")} disabled={busy} /><button aria-label="Send question" disabled={busy}>↑</button></form><small>{t("trust.title", "This is a screening support tool.")}</small></div>}</aside>;
+  return <aside className={`chat-widget ${open ? "chat-open" : ""}`}><button className="chat-toggle" onClick={() => setOpen(!open)}>{open ? t("web.chat.close", "Close assistants") : t("web.chat.open", "Ask an assistant")}</button>{open && <div className="chat-body"><div className="assistant-tabs"><button className={assistant === "newborn-care" ? "assistant-active" : ""} onClick={() => setAssistant("newborn-care")}>Care Guide</button><button className={assistant === "immunisation-ng" ? "assistant-active" : ""} onClick={() => setAssistant("immunisation-ng")}>Immunisation Guide</button></div><p><strong>{labels[assistant]}</strong><br />{assistant === "newborn-care" ? "Newborn-care education support." : "Childhood vaccination education support."}</p><div className="suggestion-row">{suggestions.map((suggestion) => <button disabled={busy} key={suggestion} onClick={() => void sendQuestion(suggestion)}>{suggestion}</button>)}</div><div className="chat-messages" aria-live="polite">{chats[assistant].length === 0 && <span>{t("web.chat.empty", "Choose a suggested question or type your own below.")}</span>}{chats[assistant].map((item, index) => <p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{busy && <span>{t("web.chat.thinking", "Thinking…")}</span>}</div><form onSubmit={(event) => { event.preventDefault(); void sendQuestion(message); }}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("web.chat.placeholder", "Type your question")} disabled={busy} /><button aria-label="Send question" disabled={busy}>↑</button></form><small>{t("trust.title", "This is a screening support tool.")}</small></div>}</aside>;
 }
 
 function Field({ label, children }) { return <label className="form-field"><span>{label}</span>{children}</label>; }

@@ -540,6 +540,82 @@ class ConsultationRequestAudit(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+# ── CLINIXTECH PARTNER API ───────────────────────────────────
+class ClinixApiProject(Base):
+    """An organisation/application allowed to call the future public API.
+
+    This is separate from ``User``: API clients are organisations, while users
+    are people signed into JaundiCare. Keeping the boundaries apart prevents a
+    partner credential from becoming a parent or CHW credential.
+    """
+
+    __tablename__ = "clinix_api_projects"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False)
+    slug = Column(String(80), nullable=False, unique=True)
+    allowed_assistants = Column(JSON, default=list, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    api_keys = relationship(
+        "ClinixApiKey",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
+
+class ClinixApiKey(Base):
+    """Hashed, scoped project key. The secret is displayed only at creation."""
+
+    __tablename__ = "clinix_api_keys"
+    __table_args__ = (
+        Index("ix_clinix_api_keys_project_active", "project_id", "is_active"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("clinix_api_projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    key_prefix = Column(String(32), nullable=False, unique=True)
+    secret_hash = Column(String(64), nullable=False, unique=True)
+    scopes = Column(JSON, default=list, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    expires_at = Column(DateTime, nullable=True, index=True)
+    last_used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    project = relationship("ClinixApiProject", back_populates="api_keys")
+
+
+class ClinixApiRequestAudit(Base):
+    """Short-lived API metering record; never stores the message or reply."""
+
+    __tablename__ = "clinix_api_request_audits"
+    __table_args__ = (
+        Index(
+            "ix_clinix_api_request_audits_project_assistant_created",
+            "project_id",
+            "assistant",
+            "created_at",
+        ),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("clinix_api_projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    assistant = Column(String(40), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 # ── REFRESH TOKENS ───────────────────────────────────────────
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"

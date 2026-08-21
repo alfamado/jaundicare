@@ -266,6 +266,10 @@ from app.routes.screening_secure import router as screening_router
 from app.routes.profile   import router as profile_router
 from app.routes.facility  import router as facility_router
 from app.routes.consultation import router as consultation_router
+from app.routes.clinix_assist import (
+    partner_router as clinix_partner_router,
+    router as clinix_assist_router,
+)
 from app.routes.auth      import router as auth_router
 from app.services.termii_service import close_termii_client
 
@@ -314,6 +318,8 @@ app.include_router(screening_router)
 app.include_router(profile_router)
 app.include_router(facility_router)
 app.include_router(consultation_router)
+app.include_router(clinix_assist_router)
+app.include_router(clinix_partner_router)
 
 
 @app.get("/")

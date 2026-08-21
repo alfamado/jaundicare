@@ -817,19 +817,19 @@ const SECTIONS = {
     icon: "chatbubble-ellipses-outline" as const,
     color: Colors.coral,
     bg: Colors.coral + "15",
-    title: "MamaBot AI",
+    title: "Care Guide",
     subtitle: "Ask maternal healthcare questions",
     items: [],
   }
 };
 
 type SectionKey = keyof typeof SECTIONS;
-type AssistantKey = "mamabot" | "vaxai";
+type AssistantKey = "newborn-care" | "immunisation-ng";
 
 export default function CareScreen() {
   const { t } = useTranslations();
   const [activeSection, setActiveSection] = useState<SectionKey>("warning");
-  const [activeAssistant, setActiveAssistant] = useState<AssistantKey>("mamabot");
+  const [activeAssistant, setActiveAssistant] = useState<AssistantKey>("newborn-care");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const sections = {
@@ -876,7 +876,7 @@ export default function CareScreen() {
       icon: "chatbubble-ellipses-outline" as const,
       color: Colors.coral,
       bg: Colors.coral + "15",
-      title: "MamaBot AI",
+      title: "Care Guide",
       subtitle: t("app.support"),
       items: [],
     },
@@ -884,10 +884,10 @@ export default function CareScreen() {
 
   const isChatActive = activeSection === "ask_bot";
   const section = sections[activeSection === "ask_bot" ? "warning" : activeSection];
-  const chatConfig = activeAssistant === "mamabot"
+  const chatConfig = activeAssistant === "newborn-care"
     ? {
-        endpoint: "mamabot" as const,
-        title: "MamaBot Consultation",
+        endpoint: "newborn-care" as const,
+        title: "JaundiCare Care Guide",
         subtitle: "Ask about breastfeeding, jaundice warning signs, and newborn care.",
         placeholder: "Type your newborn-care question...",
         accentColor: Colors.coral,
@@ -898,8 +898,8 @@ export default function CareScreen() {
         ],
       }
     : {
-        endpoint: "vaxai" as const,
-        title: "VaxAI Immunisation Guide",
+        endpoint: "immunisation-ng" as const,
+        title: "JaundiCare Immunisation Guide",
         subtitle: "Ask about newborn immunisation visits and vaccine schedules.",
         placeholder: "Type your immunisation question...",
         accentColor: Colors.sage,
@@ -964,18 +964,18 @@ export default function CareScreen() {
         <View style={[s.layerContainer, isChatActive ? s.visibleLayer : s.hiddenLayer]}>
           <View style={s.assistantPicker}>
             <TouchableOpacity
-              style={[s.assistantButton, activeAssistant === "mamabot" && s.assistantButtonActive]}
-              onPress={() => setActiveAssistant("mamabot")}
+              style={[s.assistantButton, activeAssistant === "newborn-care" && s.assistantButtonActive]}
+              onPress={() => setActiveAssistant("newborn-care")}
             >
-              <Ionicons name="chatbubble-ellipses-outline" size={15} color={activeAssistant === "mamabot" ? Colors.coral : Colors.brownLight} />
-              <Text style={[s.assistantButtonText, activeAssistant === "mamabot" && { color: Colors.coral }]}>MamaBot</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={15} color={activeAssistant === "newborn-care" ? Colors.coral : Colors.brownLight} />
+              <Text style={[s.assistantButtonText, activeAssistant === "newborn-care" && { color: Colors.coral }]}>Care Guide</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[s.assistantButton, activeAssistant === "vaxai" && s.assistantButtonActive]}
-              onPress={() => setActiveAssistant("vaxai")}
+              style={[s.assistantButton, activeAssistant === "immunisation-ng" && s.assistantButtonActive]}
+              onPress={() => setActiveAssistant("immunisation-ng")}
             >
-              <Ionicons name="shield-checkmark-outline" size={15} color={activeAssistant === "vaxai" ? Colors.sage : Colors.brownLight} />
-              <Text style={[s.assistantButtonText, activeAssistant === "vaxai" && { color: Colors.sage }]}>VaxAI</Text>
+              <Ionicons name="shield-checkmark-outline" size={15} color={activeAssistant === "immunisation-ng" ? Colors.sage : Colors.brownLight} />
+              <Text style={[s.assistantButtonText, activeAssistant === "immunisation-ng" && { color: Colors.sage }]}>Immunisation Guide</Text>
             </TouchableOpacity>
           </View>
           <ConsultChat

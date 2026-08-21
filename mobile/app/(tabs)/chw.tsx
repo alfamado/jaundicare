@@ -1010,7 +1010,7 @@
 
 /**
  * JaundiCare — CHW Management Hub
- * Handles community health worker caseload listings, exposes regional vaccine assistants,
+ * Handles community health worker caseload listings and immunisation support,
  * maps absolute modal overlay routing pointers, and ensures safe performance-optimized atomic store bindings.
  */
 
@@ -1082,17 +1082,17 @@ export default function CHWScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={[s.modeTab, showVaxAI && s.activeModeTab]} onPress={() => setShowVaxAI(true)}>
           <Ionicons name="shield-checkmark" size={16} color={showVaxAI ? Colors.coral : Colors.brownLight} />
-          <Text style={[s.modeTabText, showVaxAI && s.activeModeTabText]}>VaxAI Immunization</Text>
+          <Text style={[s.modeTabText, showVaxAI && s.activeModeTabText]}>Immunisation Guide</Text>
         </TouchableOpacity>
       </View>
 
       {showVaxAI ? (
-        /* VaxAI chatbot module container handles macro regional clinics questions */
+        /* Source-bounded immunisation assistant for clinic-support questions. */
         <View style={s.chatWrapper}>
           <ConsultChat
-            endpoint="vaxai"
-            title="VaxAI Core Assistant"
-            subtitle="Verify immunization timelines, catch-up schedules, and standard regional clinic schedules."
+            endpoint="immunisation-ng"
+            title="JaundiCare Immunisation Guide"
+            subtitle="Check the child health card with the clinic for current schedules and catch-up care."
             placeholder="Type your tracking question..."
             accentColor={Colors.coral}
             suggestedQuestions={[
