@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import logging
 import re
 
-from .knowledge import KnowledgeCard, retrieve_cards
+from .knowledge import KnowledgeCard, retrieve_cards, retrieve_direct_card
 from .providers import ProviderUnavailable, generate
 from .safety import INFORMATION_ACTION, SafetyDecision, assess_safety
 
@@ -93,10 +93,13 @@ def _prompt(domain: str, question: str, language: str, cards: list[KnowledgeCard
         "You are ClinixTech Assist, a safety-bounded health-information assistant. "
         "Answer only from the allowed source material below. Do not diagnose, name "
         "a bilirubin level, prescribe medication, give a dose, invent an immunisation "
-        "schedule, or claim certainty. Keep the answer under 110 words, use plain "
-        f"language, and answer in the requested language code '{language}'. If the "
-        "material does not answer the question, say that a health worker or clinic "
-        "should confirm it.\n\nALLOWED SOURCE MATERIAL:\n"
+        "schedule, or claim certainty. Answer the question first in 1–3 short "
+        "sentences (maximum 70 words), using plain language and the requested "
+        f"language code '{language}'. Do not say 'I cannot provide medical advice' "
+        "or repeat a clinic disclaimer when the source material answers the question. "
+        "Only direct the user to a health worker or clinic when the material does "
+        "not answer the question or explicitly requires confirmation.\n\n"
+        "ALLOWED SOURCE MATERIAL:\n"
         f"{source_material}"
     )
     return [
@@ -139,6 +142,20 @@ async def answer_question(
             content_version=content_version,
             citations=citations,
             safety_reason=safety.reason,
+        )
+
+    # High-frequency questions receive concise, source-backed wording rather
+    # than a variable LLM paraphrase. The model remains available for other
+    # questions; it is simply not allowed to dilute these clear next steps.
+    direct_card = retrieve_direct_card(domain, question) if language == "en" else None
+    if direct_card:
+        return AssistantAnswer(
+            response=direct_card.answer,
+            action=INFORMATION_ACTION,
+            source="ClinixAI curated quick answer",
+            provider="retrieval",
+            content_version=direct_card.version,
+            citations=_citations([direct_card]),
         )
 
     fallback = _fallback(cards)

@@ -16,7 +16,7 @@ It is designed for lower-end Android phones and unreliable networks. The experie
 - Nearby-facility discovery using GPS or a manual State/LGA fallback.
 - Nearest, government, and clinic/private facility preferences, capability tags, telephone links, and map directions.
 - Recorded onboarding audio and interface translations in five languages.
-- JaundiCare Care Guide and Immunisation Guide, powered by the reusable ClinixTech Assist Core.
+- ClinixAI newborn-care support and VaccineAI Nigeria vaccine guidance, powered by the reusable ClinixTech Assist Core.
 - Offline-friendly caching and queued screening submission.
 
 ## Repository layout
@@ -296,8 +296,7 @@ an easy-to-understand product page, privacy notice, terms of use, and a secure
 browser companion at `/app`. The browser companion uses the same FastAPI API as
 the mobile app and keeps authentication tokens only in the current browser
 session. It includes the five recorded welcome narrations, parent screening,
-facilities and directions, history, care guidance, and the Care and
-Immunisation Guides. A
+facilities and directions, history, care guidance, ClinixAI, and VaccineAI. A
 provisioned community-health-worker account also receives assisted screening,
 its own activity summary, and the bilirubin reference tool.
 

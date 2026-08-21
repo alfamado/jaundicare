@@ -30,6 +30,7 @@ class KnowledgeCard:
     answer: str
     source_title: str
     source_url: str
+    direct_response: bool = False
     review_status: str = "clinical_review_required"
     version: str = CONTENT_VERSION
 
@@ -39,6 +40,41 @@ IMMUNISATION_NG = "immunisation-ng"
 
 
 KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
+    KnowledgeCard(
+        id="newborn-breastfeeding-frequency-001",
+        domain=NEWBORN_CARE,
+        title="How often to breastfeed a newborn",
+        keywords=(
+            "how often breastfeed", "how often feed", "breastfeeding frequency",
+            "how many times breastfeed", "feed day and night",
+        ),
+        answer=(
+            "Breastfeed whenever your baby shows hunger cues, day and night—there is "
+            "no fixed hourly schedule. For the first 6 months, give only breast milk "
+            "unless a qualified health worker advises otherwise."
+        ),
+        source_title="WHO: Infant and young child feeding",
+        source_url="https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding",
+        direct_response=True,
+    ),
+    KnowledgeCard(
+        id="newborn-sleepy-feeds-001",
+        domain=NEWBORN_CARE,
+        title="Baby sleepy during feeds",
+        keywords=(
+            "sleepy during feeds", "sleepy feeding", "sleep during feeds",
+            "drowsy during feeds", "baby sleepy feed",
+        ),
+        answer=(
+            "Try offering the breast again when your baby is more alert and keep "
+            "offering feeds often. If your baby is difficult to wake, repeatedly "
+            "feeds poorly, refuses feeds, or looks yellow, take them for urgent "
+            "assessment today."
+        ),
+        source_title="WHO: Early Essential Newborn Care",
+        source_url="https://www.who.int/news-room/questions-and-answers/item/early-essential-newborn-care",
+        direct_response=True,
+    ),
     KnowledgeCard(
         id="newborn-feeding-001",
         domain=NEWBORN_CARE,
@@ -98,6 +134,41 @@ KNOWLEDGE_CARDS: tuple[KnowledgeCard, ...] = (
         source_url="https://www.who.int/news-room/questions-and-answers/item/early-essential-newborn-care",
     ),
     KnowledgeCard(
+        id="immunisation-ng-birth-direct-001",
+        domain=IMMUNISATION_NG,
+        title="Vaccines due at birth in Nigeria",
+        keywords=(
+            "vaccines due at birth", "vaccine due at birth", "vaccines at birth",
+            "vaccine at birth", "birth vaccines", "birth vaccine",
+        ),
+        answer=(
+            "At birth in Nigeria, the routine visit includes BCG, OPV0 (oral polio "
+            "birth dose) and hepatitis B birth dose. Take your child health card to "
+            "the clinic so every dose is recorded."
+        ),
+        source_title="UNICEF Nigeria: Immunization Schedule",
+        source_url="https://www.unicef.org/nigeria/media/9911/file/Nigeria%20Immunization%20Schedule.pdf.pdf",
+        direct_response=True,
+    ),
+    KnowledgeCard(
+        id="immunisation-ng-next-visit-001",
+        domain=IMMUNISATION_NG,
+        title="Next routine immunisation visit",
+        keywords=(
+            "next vaccines", "next vaccine", "next immunisation", "next immunization",
+            "when next vaccine", "when should next", "next routine visit",
+        ),
+        answer=(
+            "After the birth visit, the next routine immunisation visit is at 6 weeks. "
+            "The following routine visits are generally at 10 and 14 weeks. Take the "
+            "child health card so the clinic can confirm the current schedule and any "
+            "missed doses."
+        ),
+        source_title="UNICEF Nigeria: Immunization Schedule",
+        source_url="https://www.unicef.org/nigeria/media/9911/file/Nigeria%20Immunization%20Schedule.pdf.pdf",
+        direct_response=True,
+    ),
+    KnowledgeCard(
         id="immunisation-ng-birth-001",
         domain=IMMUNISATION_NG,
         title="Nigeria birth immunisation visit",
@@ -144,6 +215,33 @@ _STOP_WORDS = {
     "is", "it", "my", "of", "on", "or", "please", "should", "the", "to", "what",
     "when", "with", "you", "your",
 }
+
+_DIRECT_QUESTION_PATTERNS = (
+    (
+        "newborn-breastfeeding-frequency-001",
+        re.compile(r"\\bhow often\\b.{0,60}\\b(?:breastfeed|breast feed|feed)\\b", re.IGNORECASE),
+    ),
+    (
+        "newborn-sleepy-feeds-001",
+        re.compile(r"\\b(?:sleepy|drowsy|sleep)\\b.{0,60}\\b(?:feed|feeds|breastfeed|suck)\\b", re.IGNORECASE),
+    ),
+    (
+        "immunisation-ng-birth-direct-001",
+        re.compile(
+            r"\\b(?:vaccine|vaccines|immunisation|immunization)\\b.{0,60}\\b(?:birth|born)\\b"
+            r"|\\b(?:birth|born)\\b.{0,60}\\b(?:vaccine|vaccines|immunisation|immunization)\\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "immunisation-ng-next-visit-001",
+        re.compile(
+            r"\\bnext\\b.{0,60}\\b(?:vaccine|vaccines|immunisation|immunization|visit)\\b"
+            r"|\\b(?:vaccine|vaccines|immunisation|immunization)\\b.{0,60}\\b(?:next|when)\\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
 
 
 def _normalise(value: str) -> str:
@@ -192,3 +290,19 @@ def retrieve_cards(domain: str, question: str, *, limit: int = 2) -> list[Knowle
 
     candidates.sort(key=lambda item: (-item[0], item[1].id))
     return [card for _, card in candidates[:limit]]
+
+
+def retrieve_direct_card(domain: str, question: str) -> KnowledgeCard | None:
+    """Return a short source-backed answer for a narrow, frequent English question.
+
+    These curated answers prevent a language model from turning a straightforward
+    parent question into a vague disclaimer. Other languages stay provider-
+    backed until their wording receives clinical review.
+    """
+
+    cards_by_id = {card.id: card for card in KNOWLEDGE_CARDS if card.domain == domain}
+    for card_id, pattern in _DIRECT_QUESTION_PATTERNS:
+        card = cards_by_id.get(card_id)
+        if card and pattern.search(question):
+            return card
+    return None

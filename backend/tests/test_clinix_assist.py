@@ -45,13 +45,31 @@ async def test_source_backed_fallback_answers_feeding_question(monkeypatch):
 
     answer = await service.answer_question(
         domain=NEWBORN_CARE,
-        question="How should I breastfeed my newborn?",
+        question="How often should I breastfeed my newborn?",
     )
 
     assert answer.action == "information"
     assert answer.provider == "retrieval"
     assert "breast milk" in answer.response.lower()
-    assert answer.citations[0]["id"] == "newborn-feeding-001"
+    assert answer.citations[0]["id"] == "newborn-breastfeeding-frequency-001"
+
+
+@pytest.mark.asyncio
+async def test_common_questions_use_compact_reviewed_answers_without_model(monkeypatch):
+    async def model_must_not_run(_messages):
+        raise AssertionError("Reviewed quick answers must not call the model")
+
+    monkeypatch.setattr(service, "generate", model_must_not_run)
+
+    answer = await service.answer_question(
+        domain=IMMUNISATION_NG,
+        question="What vaccines are due for a baby at birth in Nigeria?",
+    )
+
+    assert answer.provider == "retrieval"
+    assert "BCG" in answer.response
+    assert "OPV0" in answer.response
+    assert len(answer.response) < 240
 
 
 @pytest.mark.asyncio

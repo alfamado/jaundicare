@@ -1082,7 +1082,7 @@ export default function CHWScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={[s.modeTab, showVaxAI && s.activeModeTab]} onPress={() => setShowVaxAI(true)}>
           <Ionicons name="shield-checkmark" size={16} color={showVaxAI ? Colors.coral : Colors.brownLight} />
-          <Text style={[s.modeTabText, showVaxAI && s.activeModeTabText]}>Immunisation Guide</Text>
+          <Text style={[s.modeTabText, showVaxAI && s.activeModeTabText]}>VaccineAI</Text>
         </TouchableOpacity>
       </View>
 
@@ -1091,13 +1091,13 @@ export default function CHWScreen() {
         <View style={s.chatWrapper}>
           <ConsultChat
             endpoint="immunisation-ng"
-            title="JaundiCare Immunisation Guide"
-            subtitle="Check the child health card with the clinic for current schedules and catch-up care."
+            title="VaccineAI"
+            subtitle="Clear routine-vaccine guidance. Use the child health card at each visit."
             placeholder="Type your tracking question..."
             accentColor={Colors.coral}
             suggestedQuestions={[
               "What vaccines are due for a baby at birth in Nigeria?",
-              "What immunizations does a 6-week-old infant require?",
+              "When is the next routine visit after birth?",
               "Is Hepatitis B vaccination directly tied to newborn jaundice management?"
             ]}
           />
@@ -1116,7 +1116,7 @@ export default function CHWScreen() {
 
             <TouchableOpacity style={s.toolBtn} onPress={() => router.push("/care")}>
               <Ionicons name="book-outline" size={16} color={Colors.earth} />
-              <Text style={s.toolBtnText}>Care Guide</Text>
+              <Text style={s.toolBtnText}>ClinixAI</Text>
             </TouchableOpacity>
           </View>
 

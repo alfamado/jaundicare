@@ -817,8 +817,8 @@ const SECTIONS = {
     icon: "chatbubble-ellipses-outline" as const,
     color: Colors.coral,
     bg: Colors.coral + "15",
-    title: "Care Guide",
-    subtitle: "Ask maternal healthcare questions",
+    title: "ClinixAI",
+    subtitle: "Quick, safe newborn-care answers.",
     items: [],
   }
 };
@@ -876,8 +876,8 @@ export default function CareScreen() {
       icon: "chatbubble-ellipses-outline" as const,
       color: Colors.coral,
       bg: Colors.coral + "15",
-      title: "Care Guide",
-      subtitle: t("app.support"),
+      title: "ClinixAI",
+      subtitle: "Quick, safe newborn-care answers.",
       items: [],
     },
   };
@@ -887,8 +887,8 @@ export default function CareScreen() {
   const chatConfig = activeAssistant === "newborn-care"
     ? {
         endpoint: "newborn-care" as const,
-        title: "JaundiCare Care Guide",
-        subtitle: "Ask about breastfeeding, jaundice warning signs, and newborn care.",
+        title: "ClinixAI",
+        subtitle: "Short answers about breastfeeding, jaundice signs and newborn care.",
         placeholder: "Type your newborn-care question...",
         accentColor: Colors.coral,
         suggestedQuestions: [
@@ -899,14 +899,14 @@ export default function CareScreen() {
       }
     : {
         endpoint: "immunisation-ng" as const,
-        title: "JaundiCare Immunisation Guide",
-        subtitle: "Ask about newborn immunisation visits and vaccine schedules.",
+        title: "VaccineAI",
+        subtitle: "Clear guidance on routine childhood vaccines in Nigeria.",
         placeholder: "Type your immunisation question...",
         accentColor: Colors.sage,
         suggestedQuestions: [
           "What vaccines are due for a baby at birth in Nigeria?",
-          "What immunisations does a 6-week-old infant require?",
-          "When should I take the immunisation card to the clinic?",
+          "When is the next routine visit after birth?",
+          "When should I take the child health card to the clinic?",
         ],
       };
   
@@ -968,14 +968,14 @@ export default function CareScreen() {
               onPress={() => setActiveAssistant("newborn-care")}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={15} color={activeAssistant === "newborn-care" ? Colors.coral : Colors.brownLight} />
-              <Text style={[s.assistantButtonText, activeAssistant === "newborn-care" && { color: Colors.coral }]}>Care Guide</Text>
+              <Text style={[s.assistantButtonText, activeAssistant === "newborn-care" && { color: Colors.coral }]}>ClinixAI</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.assistantButton, activeAssistant === "immunisation-ng" && s.assistantButtonActive]}
               onPress={() => setActiveAssistant("immunisation-ng")}
             >
               <Ionicons name="shield-checkmark-outline" size={15} color={activeAssistant === "immunisation-ng" ? Colors.sage : Colors.brownLight} />
-              <Text style={[s.assistantButtonText, activeAssistant === "immunisation-ng" && { color: Colors.sage }]}>Immunisation Guide</Text>
+              <Text style={[s.assistantButtonText, activeAssistant === "immunisation-ng" && { color: Colors.sage }]}>VaccineAI</Text>
             </TouchableOpacity>
           </View>
           <ConsultChat
