@@ -4,6 +4,16 @@ from app.services.clinix_assist.knowledge import IMMUNISATION_NG, NEWBORN_CARE
 from app.services.clinix_assist import service
 
 
+def test_assistant_prompts_have_distinct_parent_facing_scopes():
+    baby_prompt = service._prompt(NEWBORN_CARE, "What should I eat?", "en", [])[0]["content"]
+    vaccine_prompt = service._prompt(IMMUNISATION_NG, "Which vaccine is next?", "en", [])[0]["content"]
+
+    assert "BabyAI" in baby_prompt
+    assert "pregnancy" in baby_prompt
+    assert "VaccineAI" in vaccine_prompt
+    assert "maternal vaccines" in vaccine_prompt
+
+
 @pytest.mark.asyncio
 async def test_danger_sign_never_waits_for_model(monkeypatch):
     async def model_must_not_run(_messages):

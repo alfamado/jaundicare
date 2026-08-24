@@ -1116,7 +1116,7 @@ export default function CHWScreen() {
 
             <TouchableOpacity style={s.toolBtn} onPress={() => router.push("/care")}>
               <Ionicons name="book-outline" size={16} color={Colors.earth} />
-              <Text style={s.toolBtnText}>ClinixAI</Text>
+              <Text style={s.toolBtnText}>BabyAI</Text>
             </TouchableOpacity>
           </View>
 

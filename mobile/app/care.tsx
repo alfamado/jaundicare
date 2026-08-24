@@ -817,7 +817,7 @@ const SECTIONS = {
     icon: "chatbubble-ellipses-outline" as const,
     color: Colors.coral,
     bg: Colors.coral + "15",
-    title: "ClinixAI",
+    title: "BabyAI",
     subtitle: "Quick, safe newborn-care answers.",
     items: [],
   }
@@ -876,8 +876,8 @@ export default function CareScreen() {
       icon: "chatbubble-ellipses-outline" as const,
       color: Colors.coral,
       bg: Colors.coral + "15",
-      title: "ClinixAI",
-      subtitle: "Quick, safe newborn-care answers.",
+      title: "BabyAI",
+      subtitle: "Pregnancy, newborn and early-childhood support.",
       items: [],
     },
   };
@@ -887,8 +887,8 @@ export default function CareScreen() {
   const chatConfig = activeAssistant === "newborn-care"
     ? {
         endpoint: "newborn-care" as const,
-        title: "ClinixAI",
-        subtitle: "Short answers about breastfeeding, jaundice signs and newborn care.",
+        title: "BabyAI",
+        subtitle: "Pregnancy, newborn and early-childhood support.",
         placeholder: "Type your newborn-care question...",
         accentColor: Colors.coral,
         suggestedQuestions: [
@@ -900,7 +900,7 @@ export default function CareScreen() {
     : {
         endpoint: "immunisation-ng" as const,
         title: "VaccineAI",
-        subtitle: "Clear guidance on routine childhood vaccines in Nigeria.",
+        subtitle: "Pregnancy and child vaccination guidance.",
         placeholder: "Type your immunisation question...",
         accentColor: Colors.sage,
         suggestedQuestions: [
@@ -968,7 +968,7 @@ export default function CareScreen() {
               onPress={() => setActiveAssistant("newborn-care")}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={15} color={activeAssistant === "newborn-care" ? Colors.coral : Colors.brownLight} />
-              <Text style={[s.assistantButtonText, activeAssistant === "newborn-care" && { color: Colors.coral }]}>ClinixAI</Text>
+              <Text style={[s.assistantButtonText, activeAssistant === "newborn-care" && { color: Colors.coral }]}>BabyAI</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.assistantButton, activeAssistant === "immunisation-ng" && s.assistantButtonActive]}

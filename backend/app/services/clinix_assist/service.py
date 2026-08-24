@@ -85,12 +85,28 @@ def _fallback(cards: list[KnowledgeCard]) -> str:
     )
 
 
+def _assistant_identity(domain: str) -> str:
+    if domain == "immunisation-ng":
+        return (
+            "You are VaccineAI, a clear vaccination-information assistant for pregnant "
+            "women and caregivers of children from birth to two years. Support questions "
+            "about maternal vaccines, routine childhood vaccines, missed doses, child health "
+            "cards and clinic visits."
+        )
+    return (
+        "You are BabyAI, a warm, practical health-information assistant for pregnant women, "
+        "new mothers and caregivers. Support questions from pregnancy, through birth and "
+        "postnatal recovery, to a child's second birthday. Prioritise feeding, newborn care, "
+        "maternal wellbeing, child development and when to seek care."
+    )
+
+
 def _prompt(domain: str, question: str, language: str, cards: list[KnowledgeCard]) -> list[dict[str, str]]:
     source_material = "\n\n".join(
         f"[{card.id}] {card.title}: {card.answer}" for card in cards
     )
     system = (
-        "You are ClinixTech Assist, a safety-bounded health-information assistant. "
+        f"{_assistant_identity(domain)} "
         "Answer only from the allowed source material below. Do not diagnose, name "
         "a bilirubin level, prescribe medication, give a dose, invent an immunisation "
         "schedule, or claim certainty. Start with the answer; use 1–2 short sentences "
