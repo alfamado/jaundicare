@@ -113,8 +113,8 @@ ClinixTech products without making an external chatbot the product boundary.
 ```text
 Mobile app / web client
         -> JaundiCare API on Render
-        -> danger-sign rules + JaundiCare knowledge pack
-        -> hosted Meta Llama provider (optional)
+        -> Clinix Assist API on Render (server-to-server, optional)
+        -> JaundiCare embedded source-backed fallback
 ```
 
 The client never receives the provider credential. Render receives one request
@@ -125,6 +125,28 @@ call, the service removes common phone numbers, emails and direct self-reported
 names. Clients must still ask users not to type names, phone numbers, hospital
 record numbers or other identifiers. A `session_id` is client-generated
 correlation only; it is not server-side conversation memory.
+
+### Connect the standalone Clinix Assist service
+
+When the separate Clinix Assist service is deployed, set these on the
+**JaundiCare backend Render service only**:
+
+```text
+CLINIX_ASSIST_BASE_URL=https://clinix-assist.onrender.com
+CLINIX_ASSIST_API_KEY=cxt_live_...your JaundiCare client key...
+CLINIX_ASSIST_SERVICE_TIMEOUT_SECONDS=20
+```
+
+Do not place these values in Vercel, Expo, a mobile `.env`, or source control.
+JaundiCare forwards only the current message, chosen language, and optional
+client-generated session ID. It does not send its user token, user ID, baby
+profile, screening history, or image. If Clinix Assist is unavailable,
+JaundiCare uses its embedded source-backed assistant fallback rather than
+failing the screen.
+
+After this connection is live, leave `CORS_ALLOWED_ORIGINS` empty on Clinix
+Assist because it is server-to-server. Keep JaundiCare's existing browser CORS
+origins, including its public website, unchanged.
 
 The model is additionally bypassed for recognised newborn danger signs and
 attempts to override its instructions. These rule sets are deliberately

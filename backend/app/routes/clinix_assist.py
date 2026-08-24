@@ -5,6 +5,7 @@ partner API will authenticate organisations by hashed, scoped API keys rather
 than exposing this route directly to untrusted mobile clients.
 """
 
+import logging
 import os
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -23,6 +24,10 @@ from app.services.clinix_assist.partner_auth import (
     record_and_limit_partner_request,
 )
 from app.services.clinix_assist.service import answer_question
+from app.services.clinix_assist.standalone_client import (
+    StandaloneAssistUnavailable,
+    answer_from_standalone,
+)
 
 
 router = APIRouter(prefix="/v1/assistants", tags=["clinix-assist"])
@@ -32,6 +37,8 @@ _PARTNER_DOMAINS = {
     "newborn-care": NEWBORN_CARE,
     "immunisation-ng": IMMUNISATION_NG,
 }
+
+logger = logging.getLogger(__name__)
 
 
 class AssistRequest(BaseModel):
@@ -68,7 +75,21 @@ async def _respond(domain: str, payload: AssistRequest) -> AssistResponse:
     message = payload.message.strip()
     if not message:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
-    answer = await answer_question(domain=domain, question=message, language=payload.language)
+    try:
+        answer = await answer_from_standalone(
+            assistant=domain,
+            message=message,
+            language=payload.language,
+            session_id=payload.session_id,
+        )
+    except StandaloneAssistUnavailable as error:
+        # Never log a question or response. The embedded source-bounded
+        # service preserves availability if the standalone service is down.
+        logger.warning("Standalone Clinix Assist fallback: %s", error)
+        answer = None
+
+    if answer is None:
+        answer = await answer_question(domain=domain, question=message, language=payload.language)
     return AssistResponse(
         response=answer.response,
         action=answer.action,

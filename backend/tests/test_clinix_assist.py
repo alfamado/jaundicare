@@ -50,7 +50,8 @@ async def test_source_backed_fallback_answers_feeding_question(monkeypatch):
 
     assert answer.action == "information"
     assert answer.provider == "retrieval"
-    assert "breast milk" in answer.response.lower()
+    assert "8" in answer.response
+    assert "feed whenever" in answer.response.lower()
     assert answer.citations[0]["id"] == "newborn-breastfeeding-frequency-001"
 
 

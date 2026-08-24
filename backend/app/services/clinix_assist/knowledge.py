@@ -230,33 +230,33 @@ _STOP_WORDS = {
 _DIRECT_QUESTION_PATTERNS = (
     (
         "newborn-breastfeeding-frequency-001",
-        re.compile(r"\\bhow often\\b.{0,60}\\b(?:breastfeed|breast feed|feed)\\b", re.IGNORECASE),
+        re.compile(r"\bhow often\b.{0,60}\b(?:breastfeed|breast feed|feed)\b", re.IGNORECASE),
     ),
     (
         "newborn-sleepy-feeds-001",
-        re.compile(r"\\b(?:sleepy|drowsy|sleep)\\b.{0,60}\\b(?:feed|feeds|breastfeed|suck)\\b", re.IGNORECASE),
+        re.compile(r"\b(?:sleepy|drowsy|sleep)\b.{0,60}\b(?:feed|feeds|breastfeed|suck)\b", re.IGNORECASE),
     ),
     (
         "newborn-water-under-six-months-001",
         re.compile(
-            r"\\b(?:give|drink|need|should)\\b.{0,60}\\bwater\\b"
-            r"|\\bwater\\b.{0,60}\\b(?:baby|newborn|month|breastfeed)\\b",
+            r"\b(?:give|drink|need|should)\b.{0,60}\bwater\b"
+            r"|\bwater\b.{0,60}\b(?:baby|newborn|month|breastfeed)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "immunisation-ng-birth-direct-001",
         re.compile(
-            r"\\b(?:vaccine|vaccines|immunisation|immunization)\\b.{0,60}\\b(?:birth|born)\\b"
-            r"|\\b(?:birth|born)\\b.{0,60}\\b(?:vaccine|vaccines|immunisation|immunization)\\b",
+            r"\b(?:vaccine|vaccines|immunisation|immunization)\b.{0,60}\b(?:birth|born)\b"
+            r"|\b(?:birth|born)\b.{0,60}\b(?:vaccine|vaccines|immunisation|immunization)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "immunisation-ng-next-visit-001",
         re.compile(
-            r"\\bnext\\b.{0,60}\\b(?:vaccine|vaccines|immunisation|immunization|visit)\\b"
-            r"|\\b(?:vaccine|vaccines|immunisation|immunization)\\b.{0,60}\\b(?:next|when)\\b",
+            r"\bnext\b.{0,60}\b(?:vaccine|vaccines|immunisation|immunization|visit)\b"
+            r"|\b(?:vaccine|vaccines|immunisation|immunization)\b.{0,60}\b(?:next|when)\b",
             re.IGNORECASE,
         ),
     ),
@@ -300,9 +300,14 @@ def retrieve_cards(domain: str, question: str, *, limit: int = 2) -> list[Knowle
         score = 0
         for keyword in card.keywords:
             normalised_keyword = _normalise(keyword)
+            keyword_tokens = _tokens(normalised_keyword)
             if normalised_keyword in query:
                 score += 4 if " " in normalised_keyword else 2
-            score += len(_tokens(normalised_keyword) & query_tokens)
+            # A partial match on a phrase such as "baby water" must not make
+            # an unrelated "my baby..." question retrieve the water card.
+            # Multi-word keywords score only when the whole phrase appears.
+            elif len(keyword_tokens) == 1 and keyword_tokens & query_tokens:
+                score += 1
 
         if score:
             candidates.append((score, card))
